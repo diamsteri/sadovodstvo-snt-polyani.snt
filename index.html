@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>СНТ «Поляны» — форум</title>
+<style>
+  :root{
+    --paper:#EAE2D0; --paper-2:#F3EDE0; --ink:#202521; --ink-soft:#4B4A3F;
+    --teal:#24504A; --teal-dark:#173733; --brass:#B98A3D; --stamp-red:#A63A2E;
+    --line:#C8BEA4; --danger:#A63A2E;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;min-height:100vh;}
+  h1,h2,h3{font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif;font-weight:700;letter-spacing:.3px;color:var(--teal-dark);margin:0;}
+  a{color:var(--teal);}
+  button{font-family:inherit;cursor:pointer;}
+  .app-shell{max-width:920px;margin:0 auto;padding:24px 18px 80px;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;border-bottom:3px double var(--ink);padding-bottom:14px;margin-bottom:26px;flex-wrap:wrap;gap:10px;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand .mark{width:44px;height:44px;border-radius:50%;border:2px dashed var(--brass);display:flex;align-items:center;justify-content:center;transform:rotate(-6deg);font-size:20px;color:var(--brass);flex-shrink:0;}
+  .brand h1{font-size:26px;}
+  .brand p{margin:0;font-size:12px;color:var(--ink-soft);letter-spacing:1px;text-transform:uppercase;}
+  .userbox{display:flex;align-items:center;gap:10px;font-size:14px;}
+  .role-badge{font-family:'Courier New',monospace;font-size:11px;border:1px solid var(--ink);padding:2px 7px;border-radius:3px;transform:rotate(-2deg);display:inline-block;}
+  .role-badge.admin{border-color:var(--stamp-red);color:var(--stamp-red);}
+  .btn{border:none;border-radius:4px;padding:9px 16px;font-size:14px;font-weight:600;}
+  .btn-primary{background:var(--teal);color:#fff;} .btn-primary:hover{background:var(--teal-dark);}
+  .btn-outline{background:transparent;border:1.5px solid var(--ink);color:var(--ink);}
+  .btn-outline:hover{background:var(--ink);color:var(--paper);}
+  .btn-danger{background:transparent;border:1.5px solid var(--danger);color:var(--danger);}
+  .btn-danger:hover{background:var(--danger);color:#fff;}
+  .btn-ghost{background:transparent;border:none;color:var(--ink-soft);font-size:13px;text-decoration:underline;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-small{padding:5px 10px;font-size:12px;}
+  .card{background:var(--paper-2);border:1px solid var(--line);border-radius:6px;padding:22px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--ink-soft);margin-bottom:5px;}
+  .field input,.field textarea{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:4px;background:#fff;font-size:14px;font-family:inherit;color:var(--ink);}
+  .field input:focus,.field textarea:focus{outline:2px solid var(--teal);border-color:var(--teal);}
+  .error-msg{color:var(--stamp-red);font-size:13px;margin:8px 0;}
+  .hint{font-size:12px;color:var(--ink-soft);margin-top:6px;}
+  .auth-wrap{max-width:400px;margin:60px auto;}
+  .auth-tabs{display:flex;gap:8px;margin-bottom:18px;}
+  .auth-tabs button{flex:1;background:transparent;border:1.5px solid var(--ink);padding:8px;border-radius:4px;font-size:13px;font-weight:600;}
+  .auth-tabs button.active{background:var(--ink);color:var(--paper);}
+  .cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:10px;}
+  .cat-card{background:var(--paper-2);border:1px solid var(--line);border-radius:6px;padding:16px;position:relative;cursor:pointer;}
+  .cat-card:hover{box-shadow:0 3px 0 var(--brass);}
+  .cat-stamp{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;border:2px dashed var(--brass);color:var(--brass);display:flex;align-items:center;justify-content:center;font-size:14px;transform:rotate(8deg);}
+  .cat-card h3{font-size:17px;margin-bottom:4px;}
+  .cat-card .count{font-size:12px;color:var(--ink-soft);font-family:'Courier New',monospace;}
+  .cat-card .del-cat{position:absolute;bottom:10px;right:10px;}
+  .ticket-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 4px;border-bottom:1px dashed var(--line);cursor:pointer;}
+  .ticket-row:last-child{border-bottom:none;}
+  .t-title{font-size:16px;font-weight:600;color:var(--ink);}
+  .t-meta{font-size:12px;color:var(--ink-soft);font-family:'Courier New',monospace;margin-top:3px;}
+  .flag{font-size:11px;padding:2px 6px;border-radius:3px;border:1px solid var(--ink-soft);color:var(--ink-soft);}
+  .crumbs{font-size:13px;margin-bottom:16px;color:var(--ink-soft);}
+  .crumbs a{cursor:pointer;text-decoration:underline;}
+  .comment{background:var(--paper-2);border:1px solid var(--line);border-radius:6px;padding:14px 16px;margin-bottom:12px;}
+  .comment-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+  .c-author{font-weight:700;font-size:13px;}
+  .c-time{font-size:11px;color:var(--ink-soft);font-family:'Courier New',monospace;}
+  .c-text{font-size:14px;line-height:1.5;white-space:pre-wrap;}
+  .c-footer{display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:8px;}
+  .reactions{display:flex;gap:6px;flex-wrap:wrap;}
+  .react-pill{border:1px solid var(--line);background:#fff;border-radius:14px;padding:2px 9px;font-size:12px;}
+  .react-pill.mine{border-color:var(--teal);background:#e4efed;}
+  .react-add-btn{border:1px dashed var(--line);background:transparent;border-radius:14px;padding:2px 8px;font-size:12px;color:var(--ink-soft);}
+  .react-add-btn:hover{border-color:var(--teal);color:var(--teal);}
+  .reaction-picker{display:flex;gap:2px;flex-wrap:wrap;margin-top:8px;padding:6px 8px;background:#fff;border:1px solid var(--line);border-radius:18px;width:fit-content;}
+  .reaction-picker button{background:transparent;border:none;font-size:18px;padding:3px 5px;border-radius:50%;line-height:1;}
+  .reaction-picker button:hover{background:var(--paper);}
+  .c-tools{display:flex;gap:8px;}
+  .empty-state{text-align:center;padding:40px 10px;color:var(--ink-soft);}
+  .compose{margin-top:18px;}
+  .compose textarea{min-height:70px;resize:vertical;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;}
+  .row>input{flex:1;min-width:180px;}
+  .locked-note{background:#f0e9d8;border:1px dashed var(--brass);padding:10px 14px;border-radius:4px;font-size:13px;color:var(--ink-soft);}
+  .home-section{margin-bottom:30px;}
+  .home-section h2{font-size:19px;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .ann-card{display:flex;justify-content:space-between;gap:10px;padding:12px 4px;border-bottom:1px dashed var(--line);cursor:pointer;}
+  .ann-card:last-child{border-bottom:none;}
+  .ann-card:hover .t-title{color:var(--teal);}
+  .home-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:20px;}
+  @media (max-width:720px){ .home-grid{grid-template-columns:1fr;} }
+  .event-row{display:flex;gap:12px;align-items:flex-start;padding:10px 4px;border-bottom:1px dashed var(--line);}
+  .event-row:last-child{border-bottom:none;}
+  .event-date-badge{flex-shrink:0;width:52px;text-align:center;background:var(--paper);border:1px solid var(--brass);border-radius:6px;padding:5px 2px;}
+  .event-date-badge .d{font-family:Georgia,serif;font-weight:700;font-size:18px;color:var(--teal-dark);line-height:1;}
+  .event-date-badge .m{font-size:10px;text-transform:uppercase;color:var(--ink-soft);letter-spacing:.5px;}
+  .event-title{font-weight:600;font-size:14px;}
+  .event-desc{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .cal-head button{background:transparent;border:1.5px solid var(--ink);border-radius:4px;padding:3px 10px;font-size:14px;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:12px;}
+  .cal-dow{color:var(--ink-soft);font-size:11px;text-transform:uppercase;padding-bottom:4px;}
+  .cal-day{padding:7px 0;border-radius:4px;position:relative;color:var(--ink);}
+  .cal-day.empty{visibility:hidden;}
+  .cal-day.today{border:1.5px solid var(--teal);font-weight:700;}
+  .cal-day.has-event::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--stamp-red);}
+  .home-cta{text-align:center;margin-top:10px;}
+  .home-cta .btn{padding:12px 26px;font-size:15px;}
+  .nav-row{display:flex;gap:18px;margin-bottom:22px;font-size:14px;border-bottom:1px solid var(--line);padding-bottom:10px;flex-wrap:wrap;}
+  .nav-link{cursor:pointer;color:var(--ink-soft);padding-bottom:6px;border-bottom:2px solid transparent;}
+  .nav-link.active{color:var(--teal-dark);font-weight:700;border-color:var(--brass);}
+  .poll-card{margin-bottom:16px;}
+  .poll-q{font-family:Georgia,'Iowan Old Style',serif;font-weight:700;font-size:16px;margin-bottom:12px;color:var(--teal-dark);}
+  .poll-options{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+  .poll-option-btn{text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:6px;padding:9px 12px;font-size:14px;}
+  .poll-option-btn:hover{border-color:var(--teal);}
+  .poll-option-result{font-size:13px;padding:2px 0;}
+  .poll-option-result.mine .poll-option-row{font-weight:700;color:var(--teal-dark);}
+  .poll-option-row{display:flex;justify-content:space-between;margin-bottom:3px;}
+  .poll-bar{background:var(--paper);border-radius:6px;height:8px;overflow:hidden;}
+  .poll-bar-fill{background:var(--teal);height:100%;}
+  .poll-meta{font-size:12px;color:var(--ink-soft);font-family:'Courier New',monospace;}
+  .poll-admin-tools{display:flex;gap:10px;margin-top:8px;}
+  .poll-opt-input{flex:1;}
+  .reply-quote{border-left:3px solid var(--brass);padding:3px 10px;margin-bottom:6px;font-size:12px;color:var(--ink-soft);background:var(--paper);border-radius:0 4px 4px 0;}
+  .reply-quote-plain{font-style:italic;}
+  .replies-toggle{font-size:12px;color:var(--teal);cursor:pointer;margin:-4px 0 14px 4px;display:inline-block;user-select:none;}
+  .replies-toggle:hover{text-decoration:underline;}
+  .replies-block{margin-left:18px;border-left:2px dashed var(--line);padding-left:14px;margin-bottom:14px;}
+  .reply-preview{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;background:var(--paper);border-left:3px solid var(--teal);padding:8px 10px;border-radius:0 4px 4px 0;margin-bottom:10px;font-size:13px;}
+  .reply-quote-preview{color:var(--ink-soft);font-style:italic;margin-top:2px;}
+  #selection-reply-btn{box-shadow:0 2px 10px rgba(0,0,0,.25);}
+  .c-image{max-width:100%;border-radius:6px;margin-bottom:8px;display:block;}
+  .format-toolbar{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
+  .format-toolbar button{background:#fff;border:1.5px solid var(--line);border-radius:4px;padding:5px 10px;font-size:13px;}
+  .format-toolbar button:hover{border-color:var(--teal);}
+  .format-toolbar select{border:1.5px solid var(--line);border-radius:4px;padding:5px 8px;font-size:12px;background:#fff;}
+  .attach-photo-btn{cursor:pointer;background:#fff;border:1.5px solid var(--line);border-radius:4px;padding:5px 10px;font-size:14px;}
+  .attach-photo-btn:hover{border-color:var(--teal);}
+  .pending-image{position:relative;margin-bottom:10px;}
+  .pending-image img{max-width:160px;border-radius:6px;display:block;}
+  .home-photo{width:100%;max-height:220px;object-fit:cover;border-radius:6px;display:block;}
+  .user-edit-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0;}
+  .user-edit-row input[type=text]{padding:6px 10px;border:1.5px solid var(--line);border-radius:4px;font-size:13px;}
+  .c-text{user-select:text;}
+</style>
+</head>
+<body>
+<div id="app" class="app-shell"><div class="empty-state">Загрузка…</div></div>
+<button id="selection-reply-btn" class="btn btn-primary btn-small" type="button" style="display:none;position:fixed;z-index:999;">↩ Ответить</button>
+
+<!-- Supabase client library (free backend service, not part of Claude) -->
+<script src="supabase-lib.js"></script>
+<script>
+(async function(){
+
+// =====================================================================
+// НАСТРОЙКА: вставьте сюда данные вашего проекта Supabase.
+// Supabase → ваш проект → Settings → API → Project URL и anon public key.
+// =====================================================================
+const SUPABASE_URL = 'https://rough-wood-8ed7sadovodstvo-snt-polyani.snt-polyan.workers.dev';
+const SUPABASE_ANON_KEY = 'sb_publishable_huaZdxoLBRqvIFToZ0UZSA_nPJy2wmn';
+// =====================================================================
+
+const REACTIONS = ['❤️','😂','😮','😢','👌🏼','🫠','💥','‼️','✊🏻','👎🏻','🙏🏼','🔥','👍🏼','😄','😆','😎','🥳','😪','😢','😭','🤡','⭐️','☀️','🌸','🌿'];
+
+// Decorative hand-drawn illustration (inline SVG, no external images)
+const GARDEN_BANNER_SVG = `
+<svg viewBox="0 0 480 130" width="100%" height="110" preserveAspectRatio="xMidYMax meet" style="display:block;">
+  <line x1="0" y1="112" x2="480" y2="112" stroke="#C8BEA4" stroke-width="2"/>
+  <circle cx="430" cy="30" r="16" fill="#B98A3D" opacity="0.85"/>
+  <g stroke="#B98A3D" stroke-width="2" opacity="0.6">
+    <line x1="430" y1="4" x2="430" y2="-4"/>
+    <line x1="452" y1="12" x2="460" y2="6"/>
+    <line x1="460" y1="30" x2="470" y2="30"/>
+    <line x1="452" y1="48" x2="460" y2="54"/>
+  </g>
+  <g transform="translate(30,60)">
+    <polygon points="30,0 60,60 0,60" fill="#4C7A52"/>
+    <polygon points="30,20 55,65 5,65" fill="#3F6A46"/>
+    <rect x="26" y="60" width="8" height="14" fill="#7A5C3A"/>
+  </g>
+  <g transform="translate(85,72)">
+    <circle cx="20" cy="14" r="20" fill="#5C8A5F"/>
+    <rect x="16" y="30" width="8" height="14" fill="#7A5C3A"/>
+  </g>
+  <g transform="translate(160,40)">
+    <polygon points="70,0 140,45 0,45" fill="#173733"/>
+    <rect x="18" y="45" width="104" height="48" fill="#F3EDE0" stroke="#C8BEA4" stroke-width="1.5"/>
+    <rect x="55" y="65" width="30" height="28" fill="#24504A"/>
+    <circle cx="80" cy="79" r="1.6" fill="#B98A3D"/>
+    <rect x="28" y="55" width="16" height="16" fill="#EAE2D0" stroke="#B98A3D" stroke-width="1.5"/>
+    <rect x="96" y="55" width="16" height="16" fill="#EAE2D0" stroke="#B98A3D" stroke-width="1.5"/>
+    <line x1="35" y1="55" x2="35" y2="71" stroke="#B98A3D" stroke-width="1"/>
+    <line x1="28" y1="63" x2="44" y2="63" stroke="#B98A3D" stroke-width="1"/>
+    <line x1="104" y1="55" x2="104" y2="71" stroke="#B98A3D" stroke-width="1"/>
+    <line x1="96" y1="63" x2="112" y2="63" stroke="#B98A3D" stroke-width="1"/>
+  </g>
+  <g transform="translate(330,58)">
+    <polygon points="25,0 50,58 0,58" fill="#4C7A52"/>
+    <polygon points="25,18 46,62 4,62" fill="#3F6A46"/>
+    <polygon points="25,34 42,65 8,65" fill="#345938"/>
+    <rect x="21" y="58" width="8" height="14" fill="#7A5C3A"/>
+  </g>
+  <g transform="translate(385,50)">
+    <circle cx="18" cy="16" r="18" fill="#5C8A5F"/>
+    <rect x="14" y="32" width="8" height="16" fill="#7A5C3A"/>
+  </g>
+</svg>`;
+
+// Small garden glyph for empty states
+const GARDEN_ICON_SVG = `
+<svg viewBox="0 0 100 60" width="70" height="42" style="opacity:.55;">
+  <polygon points="18,4 34,32 2,32" fill="#4C7A52"/>
+  <rect x="16" y="32" width="4" height="8" fill="#7A5C3A"/>
+  <polygon points="55,10 85,38 25,38" fill="#173733"/>
+  <rect x="32" y="38" width="46" height="18" fill="#F3EDE0" stroke="#C8BEA4"/>
+  <rect x="50" y="46" width="10" height="10" fill="#24504A"/>
+</svg>`;
+
+let sb = null;
+let configOk = SUPABASE_URL.startsWith('http') && SUPABASE_ANON_KEY.length > 20;
+let libraryLoadFailed = false;
+try{
+  if(configOk){
+    if(typeof window.supabase === 'undefined'){
+      libraryLoadFailed = true;
+    } else {
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+  }
+} catch(e){
+  console.error('Supabase client init failed', e);
+  libraryLoadFailed = true;
+}
+if(libraryLoadFailed){
+  document.getElementById('app').innerHTML = `<div class="empty-state" style="color:var(--stamp-red);">
+    ⚠ Не удалось инициализировать библиотеку Supabase — возможно, файл сайта повреждён при загрузке.<br>
+    Попробуйте перезагрузить страницу или обратитесь к администратору.
+  </div>`;
+}
+
+let state = {
+  user: null, profile: null,
+  view: 'login', authTab: 'login',
+  categories: [], topics: [], profilesMap: {}, events: [],
+  currentCategoryId: null, currentTopicId: null, comments: [],
+  calYear: new Date().getFullYear(), calMonth: new Date().getMonth(), // 0-based
+  siteContent: {}, editingIntro: false, openReactionPicker: null, reactionCounts: {},
+  polls: [], pollVotes: {}, pollCounts: {}, pollVoters: {}, pollVoteRows: {}, allProfiles: [],
+  replyTo: null, expandedReplies: {}, pendingImageUrl: null, uploadingImage: false,
+  editingUserId: null, editUserName: '', editUserRole: 'user',
+  editingPollId: null, newPollQuestion: '', newPollOptions: ['',''], newPollMulti: false, newPollCloses: '', newPollAllowChange: true,
+  error: '', lastError: null,
+};
+let commentsChannel = null;
+
+function esc(s){ const d=document.createElement('div'); d.innerText = s==null?'':String(s); return d.innerHTML; }
+function fmtTime(iso){ return new Date(iso).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}); }
+function isAdmin(){ return state.profile && state.profile.role === 'admin'; }
+function reportError(err){ console.error(err); state.lastError = (err && err.message) ? err.message : String(err); render(); }
+window.addEventListener('error', e=>reportError(e.error||e.message));
+window.addEventListener('unhandledrejection', e=>reportError(e.reason));
+
+// ---------- data ----------
+async function loadCategories(){
+  const {data, error} = await sb.from('categories').select('*').order('created_at');
+  if(error) throw error;
+  state.categories = data;
+}
+async function loadTopics(){
+  const {data, error} = await sb.from('topics').select('*').order('pinned',{ascending:false}).order('created_at',{ascending:false});
+  if(error) throw error;
+  state.topics = data;
+  await ensureProfiles(data.map(t=>t.author_id));
+}
+async function loadSiteContent(){
+  const {data, error} = await sb.from('site_content').select('*');
+  if(error) throw error;
+  state.siteContent = {};
+  data.forEach(r=> state.siteContent[r.key] = r.value);
+}
+async function saveSiteContent(key, value){
+  const {error} = await sb.from('site_content').upsert({key, value, updated_at:new Date().toISOString()});
+  if(error) throw error;
+  state.siteContent[key] = value;
+}
+async function loadEvents(){
+  const {data, error} = await sb.from('events').select('*').order('event_date');
+  if(error) throw error;
+  state.events = data;
+}
+async function addEvent(title, dateStr, description){
+  title=(title||'').trim();
+  if(!title || !dateStr) return;
+  const {error} = await sb.from('events').insert({title, event_date:dateStr, description:(description||'').trim()||null, created_by:state.user.id});
+  if(error) throw error;
+  await loadEvents(); render();
+}
+async function deleteEvent(id){
+  if(!confirm('Удалить событие?')) return;
+  const {error} = await sb.from('events').delete().eq('id', id);
+  if(error) throw error;
+  await loadEvents(); render();
+}
+
+// ---------- polls ----------
+function isPollClosed(poll){
+  return poll.closed || (poll.closes_at && new Date(poll.closes_at) <= new Date());
+}
+function resetPollForm(){
+  state.editingPollId = null;
+  state.newPollQuestion = '';
+  state.newPollOptions = ['',''];
+  state.newPollMulti = false;
+  state.newPollCloses = '';
+  state.newPollAllowChange = true;
+}
+function toDatetimeLocal(iso){
+  const d = new Date(iso);
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function syncPollFormFromDOM(){
+  const q = document.getElementById('poll-question-input'); if(q) state.newPollQuestion = q.value;
+  const opts = document.querySelectorAll('.poll-opt-input');
+  if(opts.length) state.newPollOptions = Array.from(opts).map(i=>i.value);
+  const m = document.getElementById('poll-multi-input'); if(m) state.newPollMulti = m.checked;
+  const c = document.getElementById('poll-closes-input'); if(c) state.newPollCloses = c.value;
+  const a = document.getElementById('poll-allowchange-input'); if(a) state.newPollAllowChange = a.checked;
+}
+async function loadPolls(){
+  const {data, error} = await sb.from('polls').select('*').order('created_at', {ascending:false});
+  if(error) throw error;
+  state.polls = data;
+  state.pollVotes = {}; state.pollCounts = {}; state.pollVoters = {}; state.pollVoteRows = {};
+  const ids = data.map(p=>p.id);
+  if(ids.length===0) return;
+  const {data:votes, error:vErr} = await sb.from('poll_votes').select('*').in('poll_id', ids);
+  if(vErr) throw vErr;
+  votes.forEach(v=>{
+    if(v.user_id === state.user.id){
+      (state.pollVotes[v.poll_id] = state.pollVotes[v.poll_id]||[]).push(v.option_index);
+    }
+    (state.pollVoteRows[v.poll_id] = state.pollVoteRows[v.poll_id]||[]).push(v);
+  });
+  await ensureProfiles(votes.map(v=>v.user_id));
+  const {data:counts, error:cErr} = await sb.from('poll_option_counts').select('*').in('poll_id', ids);
+  if(cErr) throw cErr;
+  counts.forEach(row=> (state.pollCounts[row.poll_id] = state.pollCounts[row.poll_id]||{})[row.option_index] = row.cnt);
+  const {data:voters, error:vwErr} = await sb.from('poll_voter_counts').select('*').in('poll_id', ids);
+  if(vwErr) throw vwErr;
+  voters.forEach(row=> state.pollVoters[row.poll_id] = row.voters);
+}
+async function createPoll(question, options, multi, closesAt, allowChange){
+  question=(question||'').trim();
+  options=(options||[]).map(o=>o.trim()).filter(Boolean);
+  if(!question || options.length<2){ alert('Нужен вопрос и минимум 2 варианта ответа.'); return; }
+  const {error} = await sb.from('polls').insert({question, options, multi, closes_at:closesAt||null, allow_change:allowChange, created_by:state.user.id});
+  if(error) throw error;
+  resetPollForm();
+  await loadPolls(); render();
+}
+async function updatePoll(id, question, options, multi, closesAt, allowChange){
+  question=(question||'').trim();
+  options=(options||[]).map(o=>o.trim()).filter(Boolean);
+  if(!question || options.length<2){ alert('Нужен вопрос и минимум 2 варианта ответа.'); return; }
+  const {error} = await sb.from('polls').update({question, options, multi, closes_at:closesAt||null, allow_change:allowChange}).eq('id', id);
+  if(error) throw error;
+  resetPollForm();
+  await loadPolls(); render();
+}
+async function setPollClosed(id, closed){
+  const {error} = await sb.from('polls').update({closed}).eq('id', id);
+  if(error) throw error;
+  await loadPolls(); render();
+}
+async function deletePoll(id){
+  if(!confirm('Удалить голосование вместе со всеми голосами?')) return;
+  const {error} = await sb.from('polls').delete().eq('id', id);
+  if(error) throw error;
+  await loadPolls(); render();
+}
+async function votePoll(pollId, optionIndex){
+  const poll = state.polls.find(p=>p.id===pollId);
+  if(!poll || isPollClosed(poll)) return;
+  const mine = state.pollVotes[pollId] || [];
+  if(!poll.allow_change && mine.length>0){
+    alert('В этом голосовании нельзя изменить свой ответ.');
+    return;
+  }
+  if(poll.multi){
+    if(mine.includes(optionIndex)){
+      const {error} = await sb.from('poll_votes').delete().eq('poll_id', pollId).eq('user_id', state.user.id).eq('option_index', optionIndex);
+      if(error) throw error;
+    } else {
+      const {error} = await sb.from('poll_votes').insert({poll_id:pollId, user_id:state.user.id, option_index:optionIndex});
+      if(error) throw error;
+    }
+  } else {
+    await sb.from('poll_votes').delete().eq('poll_id', pollId).eq('user_id', state.user.id);
+    if(!mine.includes(optionIndex)){
+      const {error} = await sb.from('poll_votes').insert({poll_id:pollId, user_id:state.user.id, option_index:optionIndex});
+      if(error) throw error;
+    }
+  }
+  await loadPolls(); render();
+}
+
+async function loadComments(topicId){
+  const {data, error} = await sb.from('comments').select('*, reactions(emoji, user_id)').eq('topic_id', topicId).order('created_at');
+  if(error) throw error;
+  state.comments = data;
+  const ids = data.map(c=>c.author_id);
+  data.forEach(c=> (c.reactions||[]).forEach(r=> ids.push(r.user_id)));
+  await ensureProfiles(ids);
+
+  // Real counts come from an anonymous view — works even though the raw
+  // reactions rows are hidden from regular users by row-level security.
+  state.reactionCounts = {};
+  const commentIds = data.map(c=>c.id);
+  if(commentIds.length){
+    const {data:counts, error:cErr} = await sb.from('reaction_counts').select('*').in('comment_id', commentIds);
+    if(cErr) throw cErr;
+    counts.forEach(row=>{
+      state.reactionCounts[row.comment_id] = state.reactionCounts[row.comment_id] || {};
+      state.reactionCounts[row.comment_id][row.emoji] = row.cnt;
+    });
+  }
+}
+async function ensureProfiles(ids){
+  const need = [...new Set(ids)].filter(id=>id && !state.profilesMap[id]);
+  if(need.length===0) return;
+  const {data, error} = await sb.from('profiles').select('id, username').in('id', need);
+  if(error) throw error;
+  data.forEach(p=> state.profilesMap[p.id] = p.username);
+}
+function authorName(id){ return state.profilesMap[id] || '—'; }
+
+// ---------- images ----------
+async function uploadFile(file){
+  const ext = (file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
+  const path = state.user.id + '/' + Date.now() + '-' + Math.random().toString(36).slice(2,8) + '.' + ext;
+  const {error} = await sb.storage.from('forum-images').upload(path, file, {upsert:false});
+  if(error) throw error;
+  const {data} = sb.storage.from('forum-images').getPublicUrl(path);
+  return data.publicUrl;
+}
+async function uploadHomePhoto(file){
+  try{
+    const url = await uploadFile(file);
+    await saveSiteContent('home_photo_url', url);
+    render();
+  } catch(err){ reportError(err); }
+}
+async function uploadCommentImage(file){
+  try{
+    state.uploadingImage = true; render();
+    const url = await uploadFile(file);
+    state.pendingImageUrl = url;
+    state.uploadingImage = false;
+    render();
+  } catch(err){ state.uploadingImage=false; reportError(err); }
+}
+
+// ---------- rich text formatting (safe: escape first, then apply our own limited markup) ----------
+const FORMAT_COLORS = ['red','green','blue','orange','purple','teal','brown'];
+function formatCommentText(raw){
+  let html = esc(raw);
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
+  html = html.replace(/__(.+?)__/g, '<u>$1</u>');
+  html = html.replace(/\[color=([a-z]+)\](.+?)\[\/color\]/gi, (m, color, txt)=>{
+    color = color.toLowerCase();
+    return FORMAT_COLORS.includes(color) ? `<span style="color:${color}">${txt}</span>` : txt;
+  });
+  return html;
+}
+function wrapComposeSelection(prefix, suffix){
+  const ta = document.getElementById('new-comment-text');
+  if(!ta) return;
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const val = ta.value;
+  const selected = val.slice(start,end) || 'текст';
+  ta.value = val.slice(0,start) + prefix + selected + suffix + val.slice(end);
+  ta.focus();
+  ta.selectionStart = start + prefix.length;
+  ta.selectionEnd = start + prefix.length + selected.length;
+}
+
+// ---------- admin: edit a participant's profile ----------
+async function updateUserProfile(id, username, role){
+  try{
+    username = (username||'').trim();
+    if(username.length<2){ alert('Имя должно быть не короче 2 символов.'); return; }
+    const {error} = await sb.from('profiles').update({username, role}).eq('id', id);
+    if(error){
+      const msg = (error.message||'').toLowerCase();
+      alert(msg.includes('duplicate')||msg.includes('unique') ? 'Это имя уже занято, выберите другое.' : ('Ошибка: '+error.message));
+      return;
+    }
+    state.editingUserId = null;
+    state.profilesMap[id] = username;
+    await loadAllProfiles();
+    render();
+  } catch(err){ reportError(err); }
+}
+
+// ---------- admin: manage users ----------
+async function loadAllProfiles(){
+  const {data, error} = await sb.from('profiles').select('*').order('created_at', {ascending:false});
+  if(error) throw error;
+  state.allProfiles = data;
+}
+async function approveUser(id){
+  const {error} = await sb.from('profiles').update({approved:true}).eq('id', id);
+  if(error) throw error;
+  await loadAllProfiles(); render();
+}
+async function revokeUser(id){
+  if(!confirm('Забрать доступ у этого пользователя? Он перестанет видеть форум, пока вы не одобрите его снова.')) return;
+  const {error} = await sb.from('profiles').update({approved:false}).eq('id', id);
+  if(error) throw error;
+  await loadAllProfiles(); render();
+}
+
+// ---------- auth ----------
+async function doRegister(email, username, password, password2){
+  try{
+    state.error = '';
+    email=(email||'').trim(); username=(username||'').trim();
+    if(!email.includes('@')){ state.error='Введите корректный email.'; return render(); }
+    if(username.length<2){ state.error='Имя должно быть не короче 2 символов.'; return render(); }
+    if(!password || password.length<6){ state.error='Пароль должен быть не короче 6 символов.'; return render(); }
+    if(password!==password2){ state.error='Пароли не совпадают.'; return render(); }
+
+    const {data: existing, error: checkErr} = await sb.from('profiles').select('id').ilike('username', username).maybeSingle();
+    if(checkErr) throw checkErr;
+    if(existing){ state.error = 'Это имя уже занято, придумайте другое.'; return render(); }
+
+    const {data, error} = await sb.auth.signUp({email, password, options:{data:{username}}});
+    if(error){
+      const msg = (error.message||'').toLowerCase();
+      state.error = (msg.includes('duplicate') || msg.includes('unique') || msg.includes('database error'))
+        ? 'Это имя уже занято, придумайте другое.'
+        : error.message;
+      return render();
+    }
+    if(!data.session){
+      state.error = '';
+      state.view='login';
+      alert('Проверьте почту '+email+' — нужно подтвердить регистрацию по ссылке из письма, потом войти.');
+      return render();
+    }
+    await afterAuth(data.user);
+  } catch(err){ reportError(err); }
+}
+async function doLogin(email, password){
+  try{
+    state.error = '';
+    const {data, error} = await sb.auth.signInWithPassword({email:(email||'').trim(), password});
+    if(error){ state.error = 'Не удалось войти: '+error.message; return render(); }
+    await afterAuth(data.user);
+  } catch(err){ reportError(err); }
+}
+async function doForgotPassword(){
+  try{
+    const emailInput = document.getElementById('login-email');
+    const email = emailInput ? emailInput.value.trim() : '';
+    if(!email || !email.includes('@')){ alert('Сначала введите свой email в поле выше, затем нажмите «Забыли пароль?».'); return; }
+    const {error} = await sb.auth.resetPasswordForEmail(email, {redirectTo: window.location.origin});
+    if(error){ reportError(error); return; }
+    alert('Письмо со ссылкой для сброса пароля отправлено на '+email+'. Проверьте почту (и папку «Спам»), перейдите по ссылке — откроется экран для задания нового пароля.');
+  } catch(err){ reportError(err); }
+}
+async function doSetNewPassword(p1, p2){
+  try{
+    state.error = '';
+    if(!p1 || p1.length<6){ state.error='Пароль должен быть не короче 6 символов.'; return render(); }
+    if(p1!==p2){ state.error='Пароли не совпадают.'; return render(); }
+    const {data, error} = await sb.auth.updateUser({password:p1});
+    if(error){ state.error = error.message; return render(); }
+    await afterAuth(data.user);
+  } catch(err){ reportError(err); }
+}
+async function afterAuth(user){
+  state.user = user;
+  const {data, error} = await sb.from('profiles').select('*').eq('id', user.id).single();
+  if(error) throw error;
+  state.profile = data;
+  state.profilesMap[user.id] = data.username;
+  const approved = data.approved || data.role === 'admin';
+  if(!approved){
+    state.view = 'pending-approval';
+    render();
+    return;
+  }
+  await loadCategories();
+  await loadTopics();
+  await loadEvents();
+  await loadSiteContent();
+  await loadPolls();
+  if(data.role === 'admin') await loadAllProfiles();
+  state.view = 'home';
+  render();
+}
+async function doLogout(){
+  await sb.auth.signOut();
+  state.user=null; state.profile=null; state.view='login';
+  if(commentsChannel){ sb.removeChannel(commentsChannel); commentsChannel=null; }
+  render();
+}
+
+// ---------- categories ----------
+async function addCategory(name){
+  name=(name||'').trim(); if(!name) return;
+  const {error} = await sb.from('categories').insert({name});
+  if(error) throw error;
+  await loadCategories(); render();
+}
+async function deleteCategory(id){
+  if(!confirm('Удалить раздел вместе со всеми темами в нём?')) return;
+  const {error} = await sb.from('categories').delete().eq('id', id);
+  if(error) throw error;
+  await loadCategories(); await loadTopics(); render();
+}
+
+// ---------- topics ----------
+async function createTopic(categoryId, title){
+  title=(title||'').trim(); if(!title) return;
+  const {data, error} = await sb.from('topics').insert({category_id:categoryId, title, author_id:state.user.id}).select().single();
+  if(error) throw error;
+  await loadTopics();
+  await openTopic(data.id);
+}
+async function togglePin(id){
+  const t = state.topics.find(t=>t.id===id);
+  const {error} = await sb.from('topics').update({pinned:!t.pinned}).eq('id', id);
+  if(error) throw error;
+  await loadTopics(); render();
+}
+async function toggleLock(id){
+  const t = state.topics.find(t=>t.id===id);
+  const {error} = await sb.from('topics').update({locked:!t.locked}).eq('id', id);
+  if(error) throw error;
+  await loadTopics(); render();
+}
+async function deleteTopic(id){
+  if(!confirm('Удалить тему вместе со всеми комментариями?')) return;
+  const {error} = await sb.from('topics').delete().eq('id', id);
+  if(error) throw error;
+  backToCategory();
+}
+
+// ---------- comments & reactions ----------
+function findCommentRoot(id){
+  const byId = {}; state.comments.forEach(c=> byId[c.id]=c);
+  let c = byId[id], guard=0;
+  while(c && c.reply_to && byId[c.reply_to] && guard++<50) c = byId[c.reply_to];
+  return c ? c.id : id;
+}
+function startReply(commentId, quoteText){
+  const c = state.comments.find(c=>c.id===commentId);
+  state.replyTo = {commentId, quote: quoteText ? quoteText.slice(0,200) : null, authorName: c?authorName(c.author_id):''};
+  render();
+  const box = document.getElementById('new-comment-text');
+  if(box) box.focus();
+}
+async function addComment(text){
+  text=(text||'').trim();
+  const imageUrl = state.pendingImageUrl;
+  if(!text && !imageUrl) return;
+  const replyTo = state.replyTo ? state.replyTo.commentId : null;
+  const quote = state.replyTo ? state.replyTo.quote : null;
+  const {error} = await sb.from('comments').insert({topic_id:state.currentTopicId, author_id:state.user.id, text: text||'', reply_to:replyTo, quote_text:quote, image_url:imageUrl});
+  if(error) throw error;
+  state.replyTo = null;
+  state.pendingImageUrl = null;
+  await loadComments(state.currentTopicId);
+  if(replyTo) state.expandedReplies[findCommentRoot(replyTo)] = true;
+  render(); scrollCommentsToBottom();
+}
+async function deleteComment(id){
+  if(!confirm('Удалить комментарий?')) return;
+  const {error} = await sb.from('comments').delete().eq('id', id);
+  if(error) throw error;
+  await loadComments(state.currentTopicId); render();
+}
+async function editComment(id, newText){
+  newText=(newText||'').trim(); if(!newText) return;
+  const {error} = await sb.from('comments').update({text:newText, edited:true}).eq('id', id);
+  if(error) throw error;
+  await loadComments(state.currentTopicId); render();
+}
+async function toggleReaction(commentId, emoji){
+  const c = state.comments.find(c=>c.id===commentId);
+  const myReaction = (c.reactions||[]).find(r=>r.user_id===state.user.id);
+  if(myReaction && myReaction.emoji === emoji){
+    // clicking the same emoji again removes your reaction
+    const {error} = await sb.from('reactions').delete().eq('comment_id', commentId).eq('user_id', state.user.id);
+    if(error) throw error;
+  } else if(myReaction){
+    // switching to a different emoji replaces your previous reaction
+    const {error} = await sb.from('reactions').update({emoji}).eq('comment_id', commentId).eq('user_id', state.user.id);
+    if(error) throw error;
+  } else {
+    const {error} = await sb.from('reactions').insert({comment_id:commentId, user_id:state.user.id, emoji});
+    if(error) throw error;
+  }
+  await loadComments(state.currentTopicId); render();
+}
+
+// ---------- navigation ----------
+function openCategory(id){ state.currentCategoryId=id; state.view='category'; render(); }
+function goHome(){ unsubscribeComments(); state.currentCategoryId=null; resetPollForm(); state.view='home'; render(); }
+function backToForum(){ unsubscribeComments(); state.currentCategoryId=null; state.openReactionPicker=null; state.replyTo=null; state.pendingImageUrl=null; resetPollForm(); state.view='forum'; render(); }
+function goPolls(){ unsubscribeComments(); state.currentCategoryId=null; state.currentTopicId=null; resetPollForm(); state.view='polls'; render(); }
+async function goUsers(){
+  unsubscribeComments(); state.currentCategoryId=null; state.currentTopicId=null; resetPollForm();
+  await loadAllProfiles();
+  state.view='admin-users'; render();
+}
+function backToCategory(){ unsubscribeComments(); state.view='category'; state.currentTopicId=null; state.openReactionPicker=null; state.replyTo=null; state.pendingImageUrl=null; render(); }
+async function openTopic(id){
+  state.openReactionPicker = null;
+  state.replyTo = null;
+  state.pendingImageUrl = null;
+  state.expandedReplies = {};
+  state.currentTopicId=id;
+  await loadTopics();
+  await loadComments(id);
+  state.view='topic';
+  render(); scrollCommentsToBottom();
+  subscribeComments(id);
+}
+function subscribeComments(topicId){
+  unsubscribeComments();
+  commentsChannel = sb.channel('comments-'+topicId)
+    .on('postgres_changes', {event:'*', schema:'public', table:'comments', filter:'topic_id=eq.'+topicId}, async ()=>{
+      await loadComments(topicId); render();
+    })
+    .on('postgres_changes', {event:'*', schema:'public', table:'reactions'}, async ()=>{
+      await loadComments(topicId); render();
+    })
+    .subscribe();
+}
+function unsubscribeComments(){ if(commentsChannel){ sb.removeChannel(commentsChannel); commentsChannel=null; } }
+function scrollCommentsToBottom(){
+  requestAnimationFrame(()=>{ const el=document.getElementById('comments-list'); if(el) el.scrollTop=el.scrollHeight; });
+}
+
+// ---------- render ----------
+function render(){
+  document.getElementById('app').innerHTML = renderConfigWarning() + renderErrorBanner() + renderView();
+  attachHandlers();
+}
+function renderConfigWarning(){
+  if(configOk) return '';
+  return `<div class="locked-note" style="margin-bottom:16px;border-color:var(--stamp-red);color:var(--stamp-red);">
+    ⚠ В файле не заполнены SUPABASE_URL и SUPABASE_ANON_KEY (в начале &lt;script&gt;). Откройте index.html
+    в текстовом редакторе и вставьте данные вашего проекта Supabase.
+  </div>`;
+}
+function renderErrorBanner(){
+  if(!state.lastError) return '';
+  return `<div class="locked-note" style="margin-bottom:16px;border-color:var(--stamp-red);color:var(--stamp-red);">
+    ⚠ Ошибка: ${esc(state.lastError)}
+    <button class="btn-ghost" data-action="dismiss-error" style="color:var(--stamp-red);margin-left:8px;">скрыть</button>
+  </div>`;
+}
+function renderHeader(){
+  if(!state.profile) return '';
+  return `
+  <div class="topbar">
+    <div class="brand" data-action="go-home" style="cursor:pointer;"><div class="mark">🌿</div><div><h1>СНТ «Поляны»</h1><p>форум садового товарищества</p></div></div>
+    <div class="userbox">
+      <span>${esc(state.profile.username)}</span>
+      <span class="role-badge ${isAdmin()?'admin':''}">${isAdmin()?'АДМИН':'участник'}</span>
+      <button class="btn btn-outline btn-small" data-action="logout">Выйти</button>
+    </div>
+  </div>`;
+}
+function renderNav(){
+  if(!state.profile) return '';
+  const item = (view,label,action)=> `<a data-action="${action}" class="nav-link ${state.view===view?'active':''}">${label}</a>`;
+  const pendingCount = isAdmin() ? state.allProfiles.filter(p=>!p.approved && p.role!=='admin').length : 0;
+  return `<div class="nav-row">
+    ${item('home','Главная','nav-home')}
+    ${item('forum','Форум','nav-forum')}
+    ${item('polls','Голосования','nav-polls')}
+    ${isAdmin() ? item('admin-users','Пользователи'+(pendingCount?` (${pendingCount})`:''),'nav-users') : ''}
+  </div>`;
+}
+function renderView(){
+  if(!configOk && state.view==='login') return renderAuth();
+  if(state.view==='login'||state.view==='register') return renderAuth();
+  if(state.view==='reset-password') return renderResetPassword();
+  if(state.view==='pending-approval') return renderPendingApproval();
+  if(state.view==='home') return renderHeader()+renderNav()+renderHome();
+  if(state.view==='forum') return renderHeader()+renderNav()+renderForum();
+  if(state.view==='polls') return renderHeader()+renderNav()+renderPolls();
+  if(state.view==='admin-users') return renderHeader()+renderNav()+renderAdminUsers();
+  if(state.view==='category') return renderHeader()+renderNav()+renderCategory();
+  if(state.view==='topic') return renderHeader()+renderNav()+renderTopic();
+  return '';
+}
+function renderPendingApproval(){
+  return `
+  <div class="auth-wrap">
+    <div class="brand" style="justify-content:center;margin-bottom:22px;"><div class="mark">🌿</div><div><h1>СНТ «Поляны»</h1><p>заявка на регистрацию</p></div></div>
+    ${GARDEN_BANNER_SVG}
+    <div class="card" style="text-align:center;margin-top:18px;">
+      <p style="font-size:15px;line-height:1.6;">Спасибо! Ваша заявка отправлена.<br>Доступ к форуму откроется, как только администратор её одобрит.</p>
+      <button class="btn btn-outline btn-small" style="margin-top:10px;" data-action="logout">Выйти</button>
+    </div>
+  </div>`;
+}
+function renderAdminUsers(){
+  const pending = state.allProfiles.filter(p=>!p.approved && p.role!=='admin');
+  const approved = state.allProfiles.filter(p=>p.approved || p.role==='admin');
+  const row = (p, actionBtn) => {
+    if(state.editingUserId === p.id){
+      return `
+      <div class="ticket-row" style="cursor:default;">
+        <div class="user-edit-row">
+          <input type="text" id="edit-user-name" value="${esc(state.editUserName)}">
+          <label style="font-size:13px;display:flex;align-items:center;gap:4px;">
+            <input type="checkbox" id="edit-user-role" style="width:auto;" ${state.editUserRole==='admin'?'checked':''}> админ
+          </label>
+          <button class="btn btn-primary btn-small" data-action="save-user-edit" data-id="${p.id}">Сохранить</button>
+          <button class="btn btn-outline btn-small" data-action="cancel-user-edit">Отмена</button>
+        </div>
+      </div>`;
+    }
+    return `
+    <div class="ticket-row" style="cursor:default;">
+      <div><div class="t-title">${esc(p.username)}</div>
+      <div class="t-meta">${p.role==='admin'?'админ':'участник'} · зарегистрирован ${fmtTime(p.created_at)}</div></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-ghost" data-action="edit-user" data-id="${p.id}">редактировать</button>
+        ${actionBtn}
+      </div>
+    </div>`;
+  };
+  const pendingHtml = pending.length ? pending.map(p=>row(p,
+    `<button class="btn btn-primary btn-small" data-action="approve-user" data-id="${p.id}">Одобрить</button>`
+  )).join('') : `<div class="empty-state">Заявок на рассмотрении нет.</div>`;
+  const approvedHtml = approved.length ? approved.map(p=>row(p,
+    p.role==='admin' ? '' : `<button class="btn-ghost" data-action="revoke-user" data-id="${p.id}" style="color:var(--stamp-red);">забрать доступ</button>`
+  )).join('') : `<div class="empty-state">Пока никого нет.</div>`;
+  return `
+  <h2 style="font-size:20px;margin-bottom:14px;">Пользователи</h2>
+  <div class="home-section">
+    <h2 style="font-size:16px;">🕐 Ожидают одобрения</h2>
+    <div class="card" style="padding:6px 16px;">${pendingHtml}</div>
+  </div>
+  <div class="home-section">
+    <h2 style="font-size:16px;">✅ Одобренные участники</h2>
+    <div class="card" style="padding:6px 16px;">${approvedHtml}</div>
+  </div>`;
+}
+function renderResetPassword(){
+  return `
+  <div class="auth-wrap">
+    <div class="brand" style="justify-content:center;margin-bottom:22px;"><div class="mark">🌿</div><div><h1>СНТ «Поляны»</h1><p>новый пароль</p></div></div>
+    <div class="card">
+      <div class="field"><label>Новый пароль</label><input id="newpass1" type="password"></div>
+      <div class="field"><label>Повторите новый пароль</label><input id="newpass2" type="password"></div>
+      ${state.error?`<div class="error-msg">${esc(state.error)}</div>`:''}
+      <button class="btn btn-primary" style="width:100%" type="button" data-action="submit-newpassword">Сохранить новый пароль</button>
+    </div>
+  </div>`;
+}
+function renderAuth(){
+  const isLogin = state.view==='login';
+  return `
+  <div class="auth-wrap">
+    <div class="brand" style="justify-content:center;margin-bottom:22px;"><div class="mark">🌿</div><div><h1>СНТ «Поляны»</h1><p>вход для садоводов</p></div></div>
+    ${GARDEN_BANNER_SVG}
+    <div class="auth-tabs" style="margin-top:18px;">
+      <button data-action="tab-login" class="${isLogin?'active':''}">Вход</button>
+      <button data-action="tab-register" class="${!isLogin?'active':''}">Регистрация</button>
+    </div>
+    <div class="card">
+      ${isLogin ? `
+        <div class="field"><label>Email</label><input id="login-email" type="email"></div>
+        <div class="field"><label>Пароль</label><input id="login-password" type="password"></div>
+        ${state.error?`<div class="error-msg">${esc(state.error)}</div>`:''}
+        <button class="btn btn-primary" style="width:100%" type="button" data-action="submit-login">Войти</button>
+        <p class="hint" style="text-align:center;margin-top:10px;"><a data-action="forgot-password" style="cursor:pointer;">Забыли пароль?</a></p>
+      ` : `
+        <div class="field"><label>Email</label><input id="reg-email" type="email"></div>
+        <div class="field"><label>Отображаемое имя</label><input id="reg-username"></div>
+        <div class="field"><label>Пароль</label><input id="reg-password" type="password"></div>
+        <div class="field"><label>Повторите пароль</label><input id="reg-password2" type="password"></div>
+        ${state.error?`<div class="error-msg">${esc(state.error)}</div>`:''}
+        <button class="btn btn-primary" style="width:100%" type="button" data-action="submit-register">Создать аккаунт</button>
+        <p class="hint">Первый зарегистрированный (например, вы, председатель) вручную назначается администратором через панель Supabase.</p>
+      `}
+    </div>
+  </div>`;
+}
+function declTopics(n){ const m10=n%10,m100=n%100; if(m10===1&&m100!==11) return 'тема'; if([2,3,4].includes(m10)&&![12,13,14].includes(m100)) return 'темы'; return 'тем'; }
+function renderHome(){
+  const introDefault = 'Добро пожаловать на форум СНТ «Поляны»! Здесь — новости правления, ближайшие события и общение с соседями.';
+  const introText = state.siteContent.home_intro || introDefault;
+  const introHtml = state.editingIntro ? `
+    <div class="card" style="margin-bottom:20px;">
+      <div class="field"><label>Текст на главной странице</label>
+        <textarea id="intro-edit-text" style="min-height:90px;">${esc(state.siteContent.home_intro || '')}</textarea>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary btn-small" type="button" data-action="save-intro">Сохранить</button>
+        <button class="btn btn-outline btn-small" type="button" data-action="cancel-intro">Отмена</button>
+      </div>
+    </div>
+  ` : `
+    <div class="card" style="margin-bottom:20px;position:relative;padding-right:${isAdmin()?'110px':'22px'};">
+      <div style="white-space:pre-wrap;font-size:14px;line-height:1.5;">${esc(introText)}</div>
+      ${isAdmin() ? `<button class="btn btn-outline btn-small" data-action="edit-intro" style="position:absolute;top:16px;right:16px;">Редактировать</button>` : ''}
+    </div>
+  `;
+
+  const pinned = state.topics.filter(t=>t.pinned).slice(0,6);
+  const annHtml = pinned.length ? pinned.map(t=>{
+     const cat = state.categories.find(c=>c.id===t.category_id);
+     return `<div class="ann-card" data-action="open-topic" data-id="${t.id}">
+       <div><div class="t-title">📌 ${esc(t.title)}</div>
+       <div class="t-meta">${cat?esc(cat.name):''} · ${esc(authorName(t.author_id))} · ${fmtTime(t.created_at)}</div></div>
+     </div>`;
+  }).join('') : `<div class="empty-state">${GARDEN_ICON_SVG}<div>Пока нет закреплённых объявлений.${isAdmin()?' Откройте тему и нажмите «Закрепить», чтобы она попала сюда.':''}</div></div>`;
+
+  const todayStr = new Date().toISOString().slice(0,10);
+  const upcoming = state.events.filter(e=> e.event_date >= todayStr).slice(0,6);
+  const MON3 = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+  const eventsHtml = upcoming.length ? upcoming.map(e=>{
+    const d = new Date(e.event_date+'T00:00:00');
+    return `<div class="event-row">
+      <div class="event-date-badge"><div class="d">${d.getDate()}</div><div class="m">${MON3[d.getMonth()]}</div></div>
+      <div style="flex:1;">
+        <div class="event-title">${esc(e.title)}</div>
+        ${e.description?`<div class="event-desc">${esc(e.description)}</div>`:''}
+      </div>
+      ${isAdmin()?`<button class="btn-ghost" data-action="del-event" data-id="${e.id}" style="color:var(--stamp-red);">удалить</button>`:''}
+    </div>`;
+  }).join('') : `<div class="empty-state">Ближайших событий нет.</div>`;
+
+  return `
+  <div class="card" style="margin-bottom:20px;padding:${state.siteContent.home_photo_url?'0':'8px 16px 0'};position:relative;">
+    ${state.siteContent.home_photo_url ? `<img src="${esc(state.siteContent.home_photo_url)}" class="home-photo">` : GARDEN_BANNER_SVG}
+    ${isAdmin() ? `<label class="btn btn-outline btn-small" style="position:absolute;bottom:10px;right:10px;cursor:pointer;">
+      ${state.siteContent.home_photo_url?'Сменить фото':'Загрузить фото'}<input type="file" id="home-photo-input" accept="image/*" style="display:none;">
+    </label>` : ''}
+  </div>
+  ${introHtml}
+  <div class="home-section">
+    <h2>📋 Объявления правления</h2>
+    <div class="card" style="padding:6px 16px;">${annHtml}</div>
+  </div>
+
+  <div class="home-grid">
+    <div class="home-section">
+      <h2>📅 Ближайшие события</h2>
+      <div class="card">
+        ${eventsHtml}
+        ${isAdmin()?`
+        <div style="margin-top:14px;border-top:1px dashed var(--line);padding-top:12px;">
+          <div class="field"><label>Название события</label><input id="new-event-title" placeholder="Например: Общее собрание"></div>
+          <div class="row">
+            <input id="new-event-date" type="date" style="max-width:170px;">
+            <input id="new-event-desc" placeholder="Описание (необязательно)">
+          </div>
+          <button class="btn btn-primary btn-small" style="margin-top:8px;" type="button" data-action="submit-addevent">Добавить событие</button>
+        </div>`:''}
+      </div>
+    </div>
+    <div class="home-section">
+      <h2>🗓 Календарь</h2>
+      <div class="card">${renderCalendar()}</div>
+    </div>
+  </div>
+
+  <div class="home-section">
+    <h2>🗳 Голосование</h2>
+    ${(()=>{
+      const openPolls = state.polls.filter(p=>!isPollClosed(p));
+      const latest = openPolls[0];
+      const cardHtml = latest ? renderPollCard(latest) : `<div class="empty-state">Сейчас нет активных голосований.</div>`;
+      const moreLink = state.polls.length ? `<p style="text-align:center;"><a data-action="nav-polls" style="cursor:pointer;">Все голосования →</a></p>` : '';
+      return cardHtml + (isAdmin() && !state.editingPollId ? renderPollForm() : '') + moreLink;
+    })()}
+  </div>
+
+  <div class="home-cta">
+    <button class="btn btn-primary" type="button" data-action="go-forum">Перейти на форум →</button>
+  </div>`;
+}
+
+function renderCalendar(){
+  const year = state.calYear, month = state.calMonth;
+  const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  const DOW = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  const first = new Date(year, month, 1);
+  let startOffset = first.getDay()-1; if(startOffset<0) startOffset=6;
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const eventDays = new Set(state.events.filter(e=>{
+    const d = new Date(e.event_date+'T00:00:00');
+    return d.getFullYear()===year && d.getMonth()===month;
+  }).map(e=> new Date(e.event_date+'T00:00:00').getDate()));
+  const today = new Date();
+  const isCurrentMonth = today.getFullYear()===year && today.getMonth()===month;
+
+  let cells = '';
+  for(let i=0;i<startOffset;i++) cells += `<div class="cal-day empty"></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const cls = ['cal-day'];
+    if(isCurrentMonth && d===today.getDate()) cls.push('today');
+    if(eventDays.has(d)) cls.push('has-event');
+    cells += `<div class="${cls.join(' ')}">${d}</div>`;
+  }
+  return `
+  <div class="cal-head">
+    <button type="button" data-action="cal-prev">←</button>
+    <strong>${MONTHS[month]} ${year}</strong>
+    <button type="button" data-action="cal-next">→</button>
+  </div>
+  <div class="cal-grid">${DOW.map(d=>`<div class="cal-dow">${d}</div>`).join('')}${cells}</div>`;
+}
+
+function declVoters(n){ const m10=n%10,m100=n%100; if(m10===1&&m100!==11) return 'голос'; if([2,3,4].includes(m10)&&![12,13,14].includes(m100)) return 'голоса'; return 'голосов'; }
+
+function renderPollForm(){
+  const opts = state.newPollOptions;
+  const optionInputs = opts.map((val,i)=>`
+    <div class="row" style="margin-bottom:6px;align-items:center;">
+      <input class="poll-opt-input" value="${esc(val)}" placeholder="Вариант ${i+1}">
+      ${opts.length>2?`<button class="btn-ghost" type="button" data-action="poll-remove-opt" data-idx="${i}" style="color:var(--stamp-red);">✕</button>`:''}
+    </div>`).join('');
+  return `
+  <div class="card" style="margin-bottom:20px;max-width:520px;">
+    <h3 style="font-size:15px;margin-bottom:10px;">${state.editingPollId?'Редактировать голосование':'Новое голосование'}</h3>
+    <div class="field"><label>Вопрос</label><input id="poll-question-input" value="${esc(state.newPollQuestion)}" placeholder="О чём спросить соседей?"></div>
+    <div class="field"><label>Варианты ответа</label>${optionInputs}
+      <button class="btn-ghost" type="button" data-action="poll-add-opt">+ добавить вариант</button>
+    </div>
+    <div class="field" style="display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" id="poll-multi-input" ${state.newPollMulti?'checked':''} style="width:auto;">
+      <label style="margin:0;text-transform:none;letter-spacing:0;font-size:13px;">Разрешить выбрать несколько вариантов</label>
+    </div>
+    <div class="field" style="display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" id="poll-allowchange-input" ${state.newPollAllowChange?'checked':''} style="width:auto;">
+      <label style="margin:0;text-transform:none;letter-spacing:0;font-size:13px;">Разрешить менять свой ответ после голосования</label>
+    </div>
+    <div class="field"><label>Завершить голосование (необязательно)</label><input type="datetime-local" id="poll-closes-input" value="${esc(state.newPollCloses)}"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary btn-small" type="button" data-action="submit-poll">${state.editingPollId?'Сохранить':'Создать голосование'}</button>
+      ${state.editingPollId?`<button class="btn btn-outline btn-small" type="button" data-action="cancel-poll-edit">Отмена</button>`:''}
+    </div>
+  </div>`;
+}
+
+function renderPollCard(poll){
+  if(state.editingPollId === poll.id) return renderPollForm();
+  const counts = state.pollCounts[poll.id] || {};
+  const totalVoters = state.pollVoters[poll.id] || 0;
+  const myVotes = state.pollVotes[poll.id] || [];
+  const closed = isPollClosed(poll);
+  const locked = poll.allow_change===false && myVotes.length>0;
+  const showResults = closed || myVotes.length > 0 || isAdmin();
+  const canInteract = !closed && !locked;
+  const voteRows = state.pollVoteRows[poll.id] || [];
+  const optionsHtml = poll.options.map((opt, idx)=>{
+    const cnt = counts[idx]||0;
+    const pct = totalVoters ? Math.round(cnt/totalVoters*100) : 0;
+    const mine = myVotes.includes(idx);
+    const titleAttr = isAdmin()
+      ? ` title="${esc(voteRows.filter(v=>v.option_index===idx).map(v=>authorName(v.user_id)).join(', ') || 'пока никто')}"`
+      : '';
+    if(showResults){
+      return `<div class="poll-option-result ${mine?'mine':''}" ${canInteract?`data-action="vote-poll" data-poll="${poll.id}" data-opt="${idx}" style="cursor:pointer;"`:''}${titleAttr}>
+        <div class="poll-option-row"><span>${mine?'✓ ':''}${esc(opt)}</span><span>${pct}% · ${cnt}</span></div>
+        <div class="poll-bar"><div class="poll-bar-fill" style="width:${pct}%"></div></div>
+      </div>`;
+    }
+    return `<button class="poll-option-btn" type="button" data-action="vote-poll" data-poll="${poll.id}" data-opt="${idx}"${titleAttr}>${esc(opt)}</button>`;
+  }).join('');
+  const statusLabel = closed ? 'Завершено' : (poll.closes_at ? 'До '+fmtTime(poll.closes_at) : 'Активно');
+  const adminControls = isAdmin() ? `
+    <div class="poll-admin-tools">
+      <button class="btn-ghost" data-action="edit-poll" data-id="${poll.id}">редактировать</button>
+      ${closed?`<button class="btn-ghost" data-action="reopen-poll" data-id="${poll.id}">возобновить</button>`
+              :`<button class="btn-ghost" data-action="close-poll" data-id="${poll.id}">завершить</button>`}
+      <button class="btn-ghost" data-action="del-poll" data-id="${poll.id}" style="color:var(--stamp-red);">удалить</button>
+    </div>` : '';
+  return `<div class="card poll-card">
+    <div class="poll-q">🗳 ${esc(poll.question)}</div>
+    <div class="poll-options">${optionsHtml}</div>
+    <div class="poll-meta">${statusLabel} · ${totalVoters} ${declVoters(totalVoters)} · ${poll.multi?'можно выбрать несколько':'один вариант'}${poll.allow_change===false?' · 🔒 ответ нельзя изменить':''}</div>
+    ${adminControls}
+  </div>`;
+}
+
+function renderPolls(){
+  const openPolls = state.polls.filter(p=>!isPollClosed(p));
+  const closedPolls = state.polls.filter(p=>isPollClosed(p));
+  return `
+  <h2 style="font-size:20px;margin-bottom:14px;">Голосования</h2>
+  ${isAdmin() && !state.editingPollId ? renderPollForm() : ''}
+  <div class="home-section">
+    <h2 style="font-size:16px;">Активные</h2>
+    ${openPolls.length ? openPolls.map(renderPollCard).join('') : `<div class="empty-state">Активных голосований нет.</div>`}
+  </div>
+  <div class="home-section">
+    <h2 style="font-size:16px;">Завершённые</h2>
+    ${closedPolls.length ? closedPolls.map(renderPollCard).join('') : `<div class="empty-state">Завершённых голосований пока нет.</div>`}
+  </div>`;
+}
+
+function renderForum(){
+  const cats = state.categories.map(c=>{
+    const count = state.topics.filter(t=>t.category_id===c.id).length;
+    return `<div class="cat-card" data-action="open-cat" data-id="${c.id}">
+      <div class="cat-stamp">${count}</div><h3>${esc(c.name)}</h3><div class="count">${count} ${declTopics(count)}</div>
+      ${isAdmin()?`<button class="btn btn-danger btn-small del-cat" data-action="del-cat" data-id="${c.id}">Удалить</button>`:''}
+    </div>`;
+  }).join('');
+  return `
+  <h2 style="font-size:20px;margin-bottom:14px;">Разделы</h2>
+  <div class="cat-grid">${cats}</div>
+  ${isAdmin()?`
+  <div class="card" style="margin-top:22px;max-width:420px;">
+    <h3 style="font-size:15px;margin-bottom:10px;">Новый раздел (только для админа)</h3>
+    <div class="row">
+      <input id="new-cat-name" placeholder="Название раздела">
+      <button class="btn btn-primary" type="button" data-action="submit-addcat">Добавить</button>
+    </div>
+  </div>`:''}`;
+}
+function renderCategory(){
+  const cat = state.categories.find(c=>c.id===state.currentCategoryId);
+  if(!cat) return `<p>Раздел не найден. <a data-action="back-forum">Назад</a></p>`;
+  const topics = state.topics.filter(t=>t.category_id===cat.id);
+  const rows = topics.length ? topics.map(t=>`
+    <div class="ticket-row" data-action="open-topic" data-id="${t.id}">
+      <div><div class="t-title">${t.pinned?'📌 ':''}${esc(t.title)}</div>
+      <div class="t-meta">от ${esc(authorName(t.author_id))} · ${fmtTime(t.created_at)}</div></div>
+      ${t.locked?`<span class="flag">закрыта</span>`:''}
+    </div>`).join('') : `<div class="empty-state">${GARDEN_ICON_SVG}<div>Тем пока нет. Откройте первую!</div></div>`;
+  return `
+  <div class="crumbs"><a data-action="back-forum">Разделы</a> / ${esc(cat.name)}</div>
+  <h2 style="font-size:20px;margin-bottom:8px;">${esc(cat.name)}</h2>
+  <div class="card" style="padding:6px 16px;margin-bottom:20px;">${rows}</div>
+  <div class="card" style="max-width:520px;">
+    <h3 style="font-size:15px;margin-bottom:10px;">Новая тема</h3>
+    <div class="row">
+      <input id="new-topic-title" placeholder="О чём хотите поговорить?">
+      <button class="btn btn-primary" type="button" data-action="submit-newtopic">Создать</button>
+    </div>
+  </div>`;
+}
+function declComments(n){ const m10=n%10,m100=n%100; if(m10===1&&m100!==11) return 'ответ'; if([2,3,4].includes(m10)&&![12,13,14].includes(m100)) return 'ответа'; return 'ответов'; }
+
+function renderSingleComment(c){
+  const isMine = state.user.id===c.author_id;
+  const canModify = isMine || isAdmin();
+  const countsForComment = state.reactionCounts[c.id] || {};
+  const activePills = REACTIONS.map(e=>{
+    const count = countsForComment[e] || 0;
+    if(count===0) return '';
+    const mine = (c.reactions||[]).some(r=>r.emoji===e && r.user_id===state.user.id);
+    const titleAttr = isAdmin()
+      ? ` title="${esc((c.reactions||[]).filter(r=>r.emoji===e).map(r=>authorName(r.user_id)).join(', '))}"`
+      : '';
+    return `<button class="react-pill ${mine?'mine':''}" data-action="react" data-cid="${c.id}" data-emoji="${e}"${titleAttr}>${e} ${count}</button>`;
+  }).join('');
+  const pickerOpen = state.openReactionPicker === c.id;
+  const pickerHtml = pickerOpen ? `<div class="reaction-picker">${REACTIONS.map(e=>
+    `<button data-action="react" data-cid="${c.id}" data-emoji="${e}">${e}</button>`
+  ).join('')}</div>` : '';
+  let quoteHtml = '';
+  if(c.reply_to){
+    if(c.quote_text){
+      quoteHtml = `<div class="reply-quote">“${esc(c.quote_text)}”</div>`;
+    } else {
+      const parent = state.comments.find(x=>x.id===c.reply_to);
+      quoteHtml = `<div class="reply-quote reply-quote-plain">↩ ответ ${parent?esc(authorName(parent.author_id)):''}</div>`;
+    }
+  }
+  return `<div class="comment">
+    <div class="comment-head"><span class="c-author">${esc(authorName(c.author_id))}</span>
+    <span class="c-time">${fmtTime(c.created_at)}${c.edited?' · изменено':''}</span></div>
+    ${quoteHtml}
+    ${c.image_url ? `<img src="${esc(c.image_url)}" class="c-image" alt="">` : ''}
+    <div class="c-text" data-ctext-id="${c.id}">${formatCommentText(c.text||'')}</div>
+    <div class="c-footer"><div class="reactions">${activePills}
+      <button class="react-add-btn" data-action="toggle-picker" data-id="${c.id}">${pickerOpen?'✕':'😊+'}</button>
+    </div>
+    <div class="c-tools">
+      <button class="btn-ghost" data-action="reply-to" data-id="${c.id}">ответить</button>
+      ${canModify?`${isMine?`<button class="btn-ghost" data-action="edit-comment" data-id="${c.id}">изменить</button>`:''}
+      <button class="btn-ghost" data-action="del-comment" data-id="${c.id}" style="color:var(--stamp-red);">удалить</button>`:''}
+    </div></div>
+    ${pickerHtml}
+    </div>`;
+}
+
+function renderTopic(){
+  const t = state.topics.find(t=>t.id===state.currentTopicId);
+  if(!t) return `<p>Тема не найдена. <a data-action="back-forum">Назад</a></p>`;
+  const cat = state.categories.find(c=>c.id===t.category_id);
+
+  const byId = {}; state.comments.forEach(c=> byId[c.id]=c);
+  function rootOf(id){
+    let c = byId[id], guard=0;
+    while(c && c.reply_to && byId[c.reply_to] && guard++<50) c = byId[c.reply_to];
+    return c ? c.id : id;
+  }
+  const topLevel = state.comments.filter(c=>!c.reply_to);
+  const repliesByRoot = {};
+  state.comments.forEach(c=>{
+    if(c.reply_to){
+      const root = rootOf(c.id);
+      (repliesByRoot[root] = repliesByRoot[root]||[]).push(c);
+    }
+  });
+
+  const comments = topLevel.map(c=>{
+    const replies = repliesByRoot[c.id] || [];
+    const expanded = !!state.expandedReplies[c.id];
+    const toggle = replies.length ? `
+      <div class="replies-toggle" data-action="toggle-replies" data-id="${c.id}">💬 ${replies.length} ${declComments(replies.length)} ${expanded?'▲':'▼'}</div>
+      ${expanded ? `<div class="replies-block">${replies.map(renderSingleComment).join('')}</div>` : ''}
+    ` : '';
+    return renderSingleComment(c) + toggle;
+  }).join('');
+
+  const adminTools = (isAdmin() || t.author_id===state.user.id) ? `
+    <div style="display:flex;gap:8px;margin:10px 0 20px;flex-wrap:wrap;">
+      ${isAdmin()?`<button class="btn btn-outline btn-small" data-action="toggle-pin" data-id="${t.id}">${t.pinned?'Открепить':'Закрепить'}</button>`:''}
+      ${isAdmin()?`<button class="btn btn-outline btn-small" data-action="toggle-lock" data-id="${t.id}">${t.locked?'Открыть тему':'Закрыть тему'}</button>`:''}
+      <button class="btn btn-danger btn-small" data-action="del-topic" data-id="${t.id}">Удалить тему</button>
+    </div>` : '';
+
+  const replyPreview = state.replyTo ? `
+    <div class="reply-preview">
+      <div><strong>Ответ${state.replyTo.authorName?(' · '+esc(state.replyTo.authorName)):''}</strong>
+      ${state.replyTo.quote?`<div class="reply-quote-preview">“${esc(state.replyTo.quote)}”</div>`:''}</div>
+      <button class="btn-ghost" type="button" data-action="cancel-reply">✕</button>
+    </div>` : '';
+
+  return `
+  <div class="crumbs"><a data-action="back-forum">Разделы</a> / <a data-action="back-cat" data-id="${cat?cat.id:''}">${cat?esc(cat.name):''}</a></div>
+  <h2 style="font-size:21px;margin-bottom:4px;">${t.pinned?'📌 ':''}${esc(t.title)}</h2>
+  <div class="t-meta" style="margin-bottom:6px;">от ${esc(authorName(t.author_id))} · ${fmtTime(t.created_at)}</div>
+  ${adminTools}
+  <div id="comments-list" style="max-height:440px;overflow-y:auto;padding-right:4px;margin-bottom:16px;">
+    ${comments || `<div class="empty-state">Комментариев пока нет — начните обсуждение.</div>`}
+  </div>
+  ${t.locked ? `<div class="locked-note">Тема закрыта администратором — новые комментарии недоступны.</div>` : `
+  <div class="compose">
+    ${replyPreview}
+    <div class="format-toolbar">
+      <button type="button" data-action="fmt-bold" title="Жирный"><b>Ж</b></button>
+      <button type="button" data-action="fmt-italic" title="Курсив"><i>К</i></button>
+      <button type="button" data-action="fmt-underline" title="Подчёркнутый"><u>Ч</u></button>
+      <select id="fmt-color-select" title="Цвет текста">
+        <option value="">Цвет…</option>
+        ${FORMAT_COLORS.map(c=>`<option value="${c}">${c}</option>`).join('')}
+      </select>
+      <label class="attach-photo-btn" title="Прикрепить фото">
+        📷<input type="file" id="attach-image-input" accept="image/*" style="display:none;">
+      </label>
+    </div>
+    ${state.uploadingImage ? `<div class="hint">Загружаю фото…</div>` : ''}
+    ${state.pendingImageUrl ? `<div class="pending-image"><img src="${esc(state.pendingImageUrl)}"><button type="button" class="btn-ghost" data-action="remove-pending-image">✕ убрать фото</button></div>` : ''}
+    <div class="field"><textarea id="new-comment-text" placeholder="${state.replyTo?'Ваш ответ…':'Написать сообщение…'}"></textarea></div>
+    <button class="btn btn-primary" type="button" data-action="submit-comment">Отправить</button>
+  </div>`}`;
+}
+
+// ---------- events ----------
+function attachHandlers(){
+  const app = document.getElementById('app');
+  app.querySelectorAll('[data-action]').forEach(el=>{
+    const action = el.getAttribute('data-action');
+    el.addEventListener('click', async ()=>{
+      const id = el.getAttribute('data-id');
+      try{
+        switch(action){
+          case 'logout': await doLogout(); break;
+          case 'tab-login': state.view='login'; state.error=''; render(); break;
+          case 'tab-register': state.view='register'; state.error=''; render(); break;
+          case 'open-cat': openCategory(id); break;
+          case 'del-cat': await deleteCategory(id); break;
+          case 'back-forum': backToForum(); break;
+          case 'go-home': goHome(); break;
+          case 'go-forum': backToForum(); break;
+          case 'nav-home': goHome(); break;
+          case 'nav-forum': backToForum(); break;
+          case 'nav-polls': goPolls(); break;
+          case 'nav-users': await goUsers(); break;
+          case 'approve-user': await approveUser(id); break;
+          case 'revoke-user': await revokeUser(id); break;
+          case 'edit-user': {
+            const p = state.allProfiles.find(p=>p.id===id);
+            if(p){ state.editingUserId=id; state.editUserName=p.username; state.editUserRole=p.role; render(); }
+            break;
+          }
+          case 'cancel-user-edit': state.editingUserId=null; render(); break;
+          case 'save-user-edit': {
+            const nameInp = document.getElementById('edit-user-name');
+            const roleInp = document.getElementById('edit-user-role');
+            const newRole = roleInp && roleInp.checked ? 'admin' : 'user';
+            await updateUserProfile(id, nameInp?nameInp.value:'', newRole);
+            break;
+          }
+          case 'vote-poll': await votePoll(el.getAttribute('data-poll'), parseInt(el.getAttribute('data-opt'),10)); break;
+          case 'poll-add-opt': syncPollFormFromDOM(); state.newPollOptions.push(''); render(); break;
+          case 'poll-remove-opt': {
+            syncPollFormFromDOM();
+            const idx = parseInt(el.getAttribute('data-idx'),10);
+            state.newPollOptions.splice(idx,1);
+            render();
+            break;
+          }
+          case 'submit-poll': {
+            syncPollFormFromDOM();
+            const closesAt = state.newPollCloses ? new Date(state.newPollCloses).toISOString() : null;
+            if(state.editingPollId){
+              await updatePoll(state.editingPollId, state.newPollQuestion, state.newPollOptions, state.newPollMulti, closesAt, state.newPollAllowChange);
+            } else {
+              await createPoll(state.newPollQuestion, state.newPollOptions, state.newPollMulti, closesAt, state.newPollAllowChange);
+            }
+            break;
+          }
+          case 'cancel-poll-edit': resetPollForm(); render(); break;
+          case 'edit-poll': {
+            const p = state.polls.find(p=>p.id===id);
+            if(p){
+              state.editingPollId = p.id;
+              state.newPollQuestion = p.question;
+              state.newPollOptions = [...p.options];
+              state.newPollMulti = p.multi;
+              state.newPollCloses = p.closes_at ? toDatetimeLocal(p.closes_at) : '';
+              state.newPollAllowChange = p.allow_change !== false;
+              render();
+            }
+            break;
+          }
+          case 'close-poll': await setPollClosed(id, true); break;
+          case 'reopen-poll': await setPollClosed(id, false); break;
+          case 'del-poll': await deletePoll(id); break;
+          case 'cal-prev': {
+            state.calMonth--; if(state.calMonth<0){ state.calMonth=11; state.calYear--; }
+            render(); break;
+          }
+          case 'cal-next': {
+            state.calMonth++; if(state.calMonth>11){ state.calMonth=0; state.calYear++; }
+            render(); break;
+          }
+          case 'submit-addevent': {
+            const t = document.getElementById('new-event-title').value;
+            const d = document.getElementById('new-event-date').value;
+            const desc = document.getElementById('new-event-desc').value;
+            if(!d){ alert('Укажите дату события.'); break; }
+            await addEvent(t, d, desc);
+            break;
+          }
+          case 'del-event': await deleteEvent(id); break;
+          case 'edit-intro': state.editingIntro = true; render(); break;
+          case 'cancel-intro': state.editingIntro = false; render(); break;
+          case 'save-intro': {
+            const val = document.getElementById('intro-edit-text').value;
+            await saveSiteContent('home_intro', val);
+            state.editingIntro = false;
+            render();
+            break;
+          }
+          case 'back-cat': openCategory(id); break;
+          case 'open-topic': await openTopic(id); break;
+          case 'toggle-pin': await togglePin(id); break;
+          case 'toggle-lock': await toggleLock(id); break;
+          case 'del-topic': await deleteTopic(id); break;
+          case 'del-comment': await deleteComment(id); break;
+          case 'fmt-bold': wrapComposeSelection('**','**'); break;
+          case 'fmt-italic': wrapComposeSelection('*','*'); break;
+          case 'fmt-underline': wrapComposeSelection('__','__'); break;
+          case 'remove-pending-image': state.pendingImageUrl = null; render(); break;
+          case 'reply-to': startReply(id, null); break;
+          case 'cancel-reply': state.replyTo = null; render(); break;
+          case 'toggle-replies': state.expandedReplies[id] = !state.expandedReplies[id]; render(); break;
+          case 'react': {
+            state.openReactionPicker = null;
+            await toggleReaction(el.getAttribute('data-cid'), el.getAttribute('data-emoji'));
+            break;
+          }
+          case 'toggle-picker': state.openReactionPicker = (state.openReactionPicker===id ? null : id); render(); break;
+          case 'dismiss-error': state.lastError=null; render(); break;
+          case 'submit-login': {
+            el.disabled=true; el.textContent='Входим…';
+            await doLogin(document.getElementById('login-email').value, document.getElementById('login-password').value);
+            break;
+          }
+          case 'forgot-password': await doForgotPassword(); break;
+          case 'submit-newpassword': {
+            el.disabled=true; el.textContent='Сохраняем…';
+            await doSetNewPassword(document.getElementById('newpass1').value, document.getElementById('newpass2').value);
+            break;
+          }
+          case 'submit-register': {
+            el.disabled=true; el.textContent='Создаём аккаунт…';
+            await doRegister(
+              document.getElementById('reg-email').value,
+              document.getElementById('reg-username').value,
+              document.getElementById('reg-password').value,
+              document.getElementById('reg-password2').value
+            );
+            break;
+          }
+          case 'submit-addcat': {
+            const inp=document.getElementById('new-cat-name');
+            await addCategory(inp.value); inp.value='';
+            break;
+          }
+          case 'submit-newtopic': {
+            const inp=document.getElementById('new-topic-title');
+            await createTopic(state.currentCategoryId, inp.value);
+            break;
+          }
+          case 'submit-comment': {
+            const inp=document.getElementById('new-comment-text');
+            const text=inp.value; inp.value='';
+            await addComment(text);
+            break;
+          }
+          case 'edit-comment': {
+            const cur = state.comments.find(c=>c.id===id);
+            const val = prompt('Изменить сообщение:', cur?cur.text:'');
+            if(val!==null) await editComment(id, val);
+            break;
+          }
+        }
+      } catch(err){ reportError(err); }
+    });
+  });
+
+  const colorSelect = document.getElementById('fmt-color-select');
+  if(colorSelect) colorSelect.addEventListener('change', ()=>{
+    const val = colorSelect.value;
+    if(val){ wrapComposeSelection('[color='+val+']', '[/color]'); }
+    colorSelect.value = '';
+  });
+
+  const attachImgInput = document.getElementById('attach-image-input');
+  if(attachImgInput) attachImgInput.addEventListener('change', async ()=>{
+    const file = attachImgInput.files[0];
+    if(file) await uploadCommentImage(file);
+  });
+
+  const homePhotoInput = document.getElementById('home-photo-input');
+  if(homePhotoInput) homePhotoInput.addEventListener('change', async ()=>{
+    const file = homePhotoInput.files[0];
+    if(file) await uploadHomePhoto(file);
+  });
+}
+
+// ---------- text-selection reply (Telegram-style) ----------
+let pendingSelection = null;
+function initSelectionReply(){
+  const btn = document.getElementById('selection-reply-btn');
+  if(!btn) return;
+  document.addEventListener('mouseup', (e)=>{
+    if(e.target === btn) return;
+    setTimeout(()=>{
+      const sel = window.getSelection();
+      const text = sel ? sel.toString().trim() : '';
+      if(!text){ btn.style.display='none'; pendingSelection=null; return; }
+      let node = sel.anchorNode;
+      let el = node && node.nodeType===3 ? node.parentElement : node;
+      const commentEl = el ? el.closest('[data-ctext-id]') : null;
+      if(!commentEl){ btn.style.display='none'; pendingSelection=null; return; }
+      const commentId = commentEl.getAttribute('data-ctext-id');
+      const rect = sel.getRangeAt(0).getBoundingClientRect();
+      pendingSelection = {commentId, text};
+      btn.style.left = Math.max(8, rect.left) + 'px';
+      btn.style.top = Math.max(8, rect.top - 38) + 'px';
+      btn.style.display = 'block';
+    }, 0);
+  });
+  btn.addEventListener('click', ()=>{
+    if(!pendingSelection) return;
+    startReply(pendingSelection.commentId, pendingSelection.text);
+    btn.style.display = 'none';
+    window.getSelection().removeAllRanges();
+    pendingSelection = null;
+  });
+}
+initSelectionReply();
+
+// ---------- init ----------
+if(libraryLoadFailed){
+  // message already shown above; nothing else to initialize
+} else if(!configOk){
+  render();
+} else {
+  sb.auth.onAuthStateChange((event)=>{
+    if(event === 'PASSWORD_RECOVERY'){ state.view = 'reset-password'; render(); }
+  });
+  sb.auth.getSession().then(async ({data})=>{
+    if(data.session){ await afterAuth(data.session.user); }
+    else { state.view='login'; render(); }
+  }).catch(err=>{ state.view='login'; render(); });
+}
+})();
+</script>
+</body>
+</html>
