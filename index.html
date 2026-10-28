@@ -136,6 +136,10 @@
   .attach-photo-btn:hover{border-color:var(--teal);}
   .pending-image{position:relative;margin-bottom:10px;}
   .pending-image img{max-width:160px;border-radius:6px;display:block;}
+  .rich-compose{width:100%;min-height:70px;padding:10px 12px;border:1.5px solid var(--line);border-radius:4px;background:#fff;font-size:14px;font-family:inherit;color:var(--ink);white-space:pre-wrap;word-wrap:break-word;}
+  .rich-compose:focus{outline:2px solid var(--teal);border-color:var(--teal);}
+  .rich-compose:empty:before{content:attr(data-placeholder);color:var(--ink-soft);}
+  .format-toolbar button.active{background:var(--teal);color:#fff;border-color:var(--teal);}
   .home-photo{width:100%;max-height:220px;object-fit:cover;border-radius:6px;display:block;}
   .user-edit-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0;}
   .user-edit-row input[type=text]{padding:6px 10px;border:1.5px solid var(--line);border-radius:4px;font-size:13px;}
@@ -483,6 +487,76 @@ function wrapComposeSelection(prefix, suffix){
   ta.focus();
   ta.selectionStart = start + prefix.length;
   ta.selectionEnd = start + prefix.length + selected.length;
+}
+
+// ---------- visual (WYSIWYG) formatting for the comment composer ----------
+// Keeps a saved selection so clicking a toolbar button doesn't lose what
+// the person highlighted (clicking a button/select first steals focus).
+let savedComposeRange = null;
+function saveComposeSelection(){
+  const box = document.getElementById('new-comment-text');
+  const sel = window.getSelection();
+  if(box && sel && sel.rangeCount>0){
+    const range = sel.getRangeAt(0);
+    if(box.contains(range.commonAncestorContainer)) savedComposeRange = range.cloneRange();
+  }
+}
+function restoreComposeSelection(){
+  const box = document.getElementById('new-comment-text');
+  if(!box) return;
+  box.focus();
+  if(savedComposeRange){
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(savedComposeRange);
+  }
+}
+function applyComposeCommand(cmd, value){
+  restoreComposeSelection();
+  document.execCommand(cmd, false, value||null);
+  saveComposeSelection();
+}
+// Only these tags (and a validated color on <span>) survive sanitizing —
+// everything else (scripts, images, links, onclick, ...) is stripped, so
+// this is safe even if someone submits crafted HTML directly to the API.
+function sanitizeRichHtml(html){
+  const ALLOWED = new Set(['B','STRONG','I','EM','U','SPAN','BR','DIV','P']);
+  const COLOR_RE = /^(#[0-9a-f]{3,8}|[a-z]+|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\))$/i;
+  let doc;
+  try{ doc = new DOMParser().parseFromString(html, 'text/html'); } catch(e){ return esc(html); }
+  function walk(node){
+    let out = '';
+    node.childNodes.forEach(child=>{
+      if(child.nodeType === 3){
+        out += esc(child.textContent);
+      } else if(child.nodeType === 1){
+        const tag = child.tagName;
+        if(tag==='BR'){ out += '<br>'; return; }
+        if(tag==='DIV' || tag==='P'){ out += walk(child) + '<br>'; return; }
+        if(tag==='SPAN'){
+          const color = child.style && child.style.color;
+          const inner = walk(child);
+          if(color && COLOR_RE.test(color.trim())) out += `<span style="color:${color.trim()}">${inner}</span>`;
+          else out += inner;
+          return;
+        }
+        if(ALLOWED.has(tag)){
+          const openTag = (tag==='B') ? 'strong' : (tag==='I') ? 'em' : tag.toLowerCase();
+          out += `<${openTag}>${walk(child)}</${openTag}>`;
+        } else {
+          out += walk(child);
+        }
+      }
+    });
+    return out;
+  }
+  return walk(doc.body).replace(/(<br>)+$/,'');
+}
+const RICH_HTML_RE = /<(strong|b|em|i|u|span|br|div|p)\b/i;
+function renderCommentBody(raw){
+  raw = raw || '';
+  if(RICH_HTML_RE.test(raw)) return sanitizeRichHtml(raw);
+  return formatCommentText(raw);
 }
 
 // ---------- admin: edit a participant's profile ----------
@@ -1188,7 +1262,7 @@ function renderSingleComment(c){
     <span class="c-time">${fmtTime(c.created_at)}${c.edited?' · изменено':''}</span></div>
     ${quoteHtml}
     ${c.image_url ? `<img src="${esc(c.image_url)}" class="c-image" alt="">` : ''}
-    <div class="c-text" data-ctext-id="${c.id}">${formatCommentText(c.text||'')}</div>
+    <div class="c-text" data-ctext-id="${c.id}">${renderCommentBody(c.text||'')}</div>
     <div class="c-footer"><div class="reactions">${activePills}
       <button class="react-add-btn" data-action="toggle-picker" data-id="${c.id}">${pickerOpen?'✕':'😊+'}</button>
     </div>
@@ -1257,10 +1331,10 @@ function renderTopic(){
   <div class="compose">
     ${replyPreview}
     <div class="format-toolbar">
-      <button type="button" data-action="fmt-bold" title="Жирный"><b>Ж</b></button>
-      <button type="button" data-action="fmt-italic" title="Курсив"><i>К</i></button>
-      <button type="button" data-action="fmt-underline" title="Подчёркнутый"><u>Ч</u></button>
-      <select id="fmt-color-select" title="Цвет текста">
+      <button type="button" data-action="fmt-bold" title="Жирный" onmousedown="event.preventDefault()"><b>Ж</b></button>
+      <button type="button" data-action="fmt-italic" title="Курсив" onmousedown="event.preventDefault()"><i>К</i></button>
+      <button type="button" data-action="fmt-underline" title="Подчёркнутый" onmousedown="event.preventDefault()"><u>Ч</u></button>
+      <select id="fmt-color-select" title="Цвет текста" onmousedown="saveComposeSelection()">
         <option value="">Цвет…</option>
         ${FORMAT_COLORS.map(c=>`<option value="${c}">${c}</option>`).join('')}
       </select>
@@ -1270,7 +1344,7 @@ function renderTopic(){
     </div>
     ${state.uploadingImage ? `<div class="hint">Загружаю фото…</div>` : ''}
     ${state.pendingImageUrl ? `<div class="pending-image"><img src="${esc(state.pendingImageUrl)}"><button type="button" class="btn-ghost" data-action="remove-pending-image">✕ убрать фото</button></div>` : ''}
-    <div class="field"><textarea id="new-comment-text" placeholder="${state.replyTo?'Ваш ответ…':'Написать сообщение…'}"></textarea></div>
+    <div class="field"><div id="new-comment-text" class="rich-compose" contenteditable="true" data-placeholder="${state.replyTo?'Ваш ответ…':'Написать сообщение…'}"></div></div>
     <button class="btn btn-primary" type="button" data-action="submit-comment">Отправить</button>
   </div>`}`;
 }
@@ -1379,9 +1453,9 @@ function attachHandlers(){
           case 'toggle-lock': await toggleLock(id); break;
           case 'del-topic': await deleteTopic(id); break;
           case 'del-comment': await deleteComment(id); break;
-          case 'fmt-bold': wrapComposeSelection('**','**'); break;
-          case 'fmt-italic': wrapComposeSelection('*','*'); break;
-          case 'fmt-underline': wrapComposeSelection('__','__'); break;
+          case 'fmt-bold': applyComposeCommand('bold'); break;
+          case 'fmt-italic': applyComposeCommand('italic'); break;
+          case 'fmt-underline': applyComposeCommand('underline'); break;
           case 'remove-pending-image': state.pendingImageUrl = null; render(); break;
           case 'reply-to': startReply(id, null); break;
           case 'cancel-reply': state.replyTo = null; render(); break;
@@ -1425,8 +1499,11 @@ function attachHandlers(){
             break;
           }
           case 'submit-comment': {
-            const inp=document.getElementById('new-comment-text');
-            const text=inp.value; inp.value='';
+            const box=document.getElementById('new-comment-text');
+            const hasText = box && box.textContent.trim().length>0;
+            const rawHtml = box ? box.innerHTML : '';
+            if(box) box.innerHTML='';
+            const text = hasText ? sanitizeRichHtml(rawHtml) : '';
             await addComment(text);
             break;
           }
@@ -1444,7 +1521,7 @@ function attachHandlers(){
   const colorSelect = document.getElementById('fmt-color-select');
   if(colorSelect) colorSelect.addEventListener('change', ()=>{
     const val = colorSelect.value;
-    if(val){ wrapComposeSelection('[color='+val+']', '[/color]'); }
+    if(val){ applyComposeCommand('foreColor', val); }
     colorSelect.value = '';
   });
 
@@ -1493,6 +1570,7 @@ function initSelectionReply(){
   });
 }
 initSelectionReply();
+document.addEventListener('selectionchange', saveComposeSelection);
 
 // ---------- init ----------
 if(libraryLoadFailed){
