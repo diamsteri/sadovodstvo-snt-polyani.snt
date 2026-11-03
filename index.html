@@ -1340,7 +1340,7 @@ function renderTopic(){
       <button type="button" data-action="fmt-bold" title="Жирный" onmousedown="event.preventDefault()"><b>Ж</b></button>
       <button type="button" data-action="fmt-italic" title="Курсив" onmousedown="event.preventDefault()"><i>К</i></button>
       <button type="button" data-action="fmt-underline" title="Подчёркнутый" onmousedown="event.preventDefault()"><u>Ч</u></button>
-      <select id="fmt-color-select" title="Цвет текста" onmousedown="saveComposeSelection()">
+      <select id="fmt-color-select"  title="Цвет текста">
         <option value="">Цвет…</option>
         ${FORMAT_COLORS.map(c=>`<option value="${c}">${c}</option>`).join('')}
       </select>
@@ -1531,6 +1531,7 @@ function attachHandlers(){
   });
 
   const colorSelect = document.getElementById('fmt-color-select');
+  if(colorSelect) colorSelect.addEventListener("mousedown", saveComposeSelection);
   if(colorSelect) colorSelect.addEventListener('change', ()=>{
     const val = colorSelect.value;
     if(val){ applyComposeCommand('foreColor', val); }
