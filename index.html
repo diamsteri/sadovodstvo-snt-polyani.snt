@@ -226,6 +226,10 @@ const GARDEN_ICON_SVG = `
   <rect x="50" y="46" width="10" height="10" fill="#24504A"/>
 </svg>`;
 
+// Opened from a password-reset email link? Remember it before the Supabase library
+// consumes and clears the URL, so we can show the "new password" form instead of the forum.
+let recoveryMode = /type=recovery/.test(window.location.hash) || /type=recovery/.test(window.location.search);
+const linkExpired = /error_code=otp_expired|error=access_denied/.test(window.location.hash+window.location.search);
 let sb = null;
 let configOk = SUPABASE_URL.startsWith('http') && SUPABASE_ANON_KEY.length > 20;
 let libraryLoadFailed = false;
@@ -702,6 +706,8 @@ async function doSetNewPassword(p1, p2){
     if(p1!==p2){ state.error='Пароли не совпадают.'; return render(); }
     const {data, error} = await sb.auth.updateUser({password:p1});
     if(error){ state.error = error.message; return render(); }
+    recoveryMode = false;
+    try{ history.replaceState(null,'',window.location.pathname); }catch(e){}
     await afterAuth(data.user);
   } catch(err){ reportError(err); }
 }
@@ -1646,11 +1652,16 @@ if(libraryLoadFailed){
   render();
 } else {
   sb.auth.onAuthStateChange((event)=>{
-    if(event === 'PASSWORD_RECOVERY'){ state.view = 'reset-password'; render(); }
+    if(event === 'PASSWORD_RECOVERY'){ recoveryMode = true; state.view = 'reset-password'; render(); }
   });
   sb.auth.getSession().then(async ({data})=>{
-    if(data.session){ await afterAuth(data.session.user); }
-    else { state.view='login'; render(); }
+    if(data.session && recoveryMode){ state.view='reset-password'; render(); }
+    else if(data.session){ await afterAuth(data.session.user); }
+    else {
+      state.view='login';
+      if(linkExpired) state.error = 'Ссылка для сброса пароля устарела или уже использована. Нажмите «Забыли пароль?» и запросите новую.';
+      render();
+    }
   }).catch(err=>{ state.view='login'; render(); });
 }
 })();
