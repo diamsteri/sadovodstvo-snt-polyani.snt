@@ -144,7 +144,8 @@
   .rich-compose{width:100%;min-height:70px;padding:10px 12px;border:1.5px solid var(--line);border-radius:4px;background:#fff;font-size:14px;font-family:inherit;color:var(--ink);white-space:pre-wrap;word-wrap:break-word;}
   .rich-compose:focus{outline:2px solid var(--teal);border-color:var(--teal);}
   .rich-compose:empty:before{content:attr(data-placeholder);color:var(--ink-soft);}
-  .format-toolbar button.active{background:var(--teal);color:#fff;border-color:var(--teal);}
+  .format-toolbar button.active{background:#e4efed;color:var(--teal-dark);border-color:var(--teal);box-shadow:0 0 0 2px var(--teal);}
+  .format-toolbar select.active{border-color:var(--teal);box-shadow:0 0 0 2px var(--teal);font-weight:600;}
   .home-photo{width:100%;max-height:220px;object-fit:cover;border-radius:6px;display:block;}
   .user-edit-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0;}
   .user-edit-row input[type=text]{padding:6px 10px;border:1.5px solid var(--line);border-radius:4px;font-size:13px;}
@@ -471,7 +472,9 @@ async function uploadCommentImage(file){
 }
 
 // ---------- rich text formatting (safe: escape first, then apply our own limited markup) ----------
-const FORMAT_COLORS = ['red','green','blue','orange','purple','teal','brown'];
+const FORMAT_COLORS = ['black','red','green','blue','orange','purple','teal','brown'];
+const COLOR_LABELS = {black:'Чёрный',red:'Красный',green:'Зелёный',blue:'Синий',orange:'Оранжевый',purple:'Фиолетовый',teal:'Бирюзовый',brown:'Коричневый'};
+const DEFAULT_TEXT_COLOR = '#202521';
 function formatCommentText(raw){
   let html = esc(raw);
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
@@ -521,6 +524,42 @@ function applyComposeCommand(cmd, value){
   restoreComposeSelection();
   document.execCommand(cmd, false, value||null);
   saveComposeSelection();
+  updateToolbarState();
+}
+// Highlights which formatting is active at the cursor / in the selection.
+let colorNameByRgb = null;
+function buildColorMap(){
+  colorNameByRgb = {};
+  const probe = document.createElement('span');
+  document.body.appendChild(probe);
+  FORMAT_COLORS.forEach(c=>{ probe.style.color = c; colorNameByRgb[getComputedStyle(probe).color] = c; });
+  probe.style.color = DEFAULT_TEXT_COLOR;
+  colorNameByRgb[getComputedStyle(probe).color] = '';
+  probe.remove();
+}
+function updateToolbarState(){
+  const box = document.getElementById('new-comment-text');
+  if(!box) return;
+  const sel = window.getSelection();
+  if(!sel || sel.rangeCount===0 || !box.contains(sel.getRangeAt(0).commonAncestorContainer)) return;
+  [['fmt-bold','bold'],['fmt-italic','italic'],['fmt-underline','underline']].forEach(([action,cmd])=>{
+    const btn = document.querySelector('[data-action="'+action+'"]');
+    if(!btn) return;
+    let on = false;
+    try{ on = document.queryCommandState(cmd); } catch(e){}
+    btn.classList.toggle('active', !!on);
+  });
+  const select = document.getElementById('fmt-color-select');
+  if(select){
+    if(!colorNameByRgb) buildColorMap();
+    let cur = '';
+    try{ cur = document.queryCommandValue('foreColor'); } catch(e){}
+    const norm = (cur||'').replace(/\s+/g,' ').replace(/^rgb\((\d+),(\d+),(\d+)\)$/,'rgb($1, $2, $3)');
+    const name = colorNameByRgb[norm] || '';
+    select.value = name;
+    select.classList.toggle('active', !!name);
+    select.style.color = name || '';
+  }
 }
 // Only these tags (and a validated color on <span>) survive sanitizing —
 // everything else (scripts, images, links, onclick, ...) is stripped, so
@@ -539,6 +578,12 @@ function sanitizeRichHtml(html){
         const tag = child.tagName;
         if(tag==='BR'){ out += '<br>'; return; }
         if(tag==='DIV' || tag==='P'){ out += walk(child) + '<br>'; return; }
+        if(tag==='FONT'){
+          const fc = (child.getAttribute('color')||'').trim();
+          const innerF = walk(child);
+          out += (fc && COLOR_RE.test(fc)) ? `<span style="color:${fc}">${innerF}</span>` : innerF;
+          return;
+        }
         if(tag==='SPAN'){
           const color = child.style && child.style.color;
           const inner = walk(child);
@@ -1342,7 +1387,8 @@ function renderTopic(){
       <button type="button" data-action="fmt-underline" title="Подчёркнутый" onmousedown="event.preventDefault()"><u>Ч</u></button>
       <select id="fmt-color-select"  title="Цвет текста">
         <option value="">Цвет…</option>
-        ${FORMAT_COLORS.map(c=>`<option value="${c}">${c}</option>`).join('')}
+        <option value="__default">Обычный</option>
+        ${FORMAT_COLORS.map(c=>`<option value="${c}" style="color:${c}">${COLOR_LABELS[c]}</option>`).join('')}
       </select>
       <label class="attach-photo-btn" title="Прикрепить фото">
         📷<input type="file" id="attach-image-input" accept="image/*" style="display:none;">
@@ -1534,8 +1580,9 @@ function attachHandlers(){
   if(colorSelect) colorSelect.addEventListener("mousedown", saveComposeSelection);
   if(colorSelect) colorSelect.addEventListener('change', ()=>{
     const val = colorSelect.value;
-    if(val){ applyComposeCommand('foreColor', val); }
-    colorSelect.value = '';
+    if(val==='__default') applyComposeCommand('foreColor', DEFAULT_TEXT_COLOR);
+    else if(val) applyComposeCommand('foreColor', val);
+    else updateToolbarState();
   });
 
   const attachImgInput = document.getElementById('attach-image-input');
@@ -1590,7 +1637,7 @@ initSelectionReply();
   lb.addEventListener('click', close);
   document.addEventListener('keydown', e=>{ if(e.key==='Escape') close(); });
 })();
-document.addEventListener('selectionchange', saveComposeSelection);
+document.addEventListener('selectionchange', ()=>{ saveComposeSelection(); updateToolbarState(); });
 
 // ---------- init ----------
 if(libraryLoadFailed){
