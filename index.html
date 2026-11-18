@@ -230,7 +230,7 @@ const GARDEN_ICON_SVG = `
 // consumes and clears the URL, so we can show the "new password" form instead of the forum.
 let recoveryMode = /type=recovery/.test(window.location.hash) || /type=recovery/.test(window.location.search);
 const linkExpired = /error_code=otp_expired|error=access_denied/.test(window.location.hash+window.location.search);
-const APP_VERSION = '18.11.2026';
+const APP_VERSION = '18.11.2026-2';
 let sb = null;
 let configOk = SUPABASE_URL.startsWith('http') && SUPABASE_ANON_KEY.length > 20;
 let libraryLoadFailed = false;
@@ -738,6 +738,11 @@ async function afterAuth(user){
   if(error) throw error;
   state.profile = data;
   state.profilesMap[user.id] = data.username;
+  if('plot_number' in data && !data.plot_number && data.role !== 'admin'){
+    state.view = 'need-plot';
+    render();
+    return;
+  }
   const approved = data.approved || data.role === 'admin';
   if(!approved){
     state.view = 'pending-approval';
@@ -752,6 +757,17 @@ async function afterAuth(user){
   if(data.role === 'admin') await loadAllProfiles();
   state.view = 'home';
   render();
+}
+async function savePlot(raw){
+  try{
+    const plot = cleanPlot(raw);
+    const pe = plotError(plot);
+    if(pe){ state.error = pe; return render(); }
+    const {error} = await sb.rpc('set_my_plot', {val: plot});
+    if(error){ state.error = 'Не удалось сохранить: ' + error.message; return render(); }
+    state.error = '';
+    await afterAuth(state.user);
+  } catch(err){ reportError(err); }
 }
 async function doLogout(){
   await sb.auth.signOut();
@@ -945,6 +961,7 @@ function renderView(){
   if(!configOk && state.view==='login') return renderAuth();
   if(state.view==='login'||state.view==='register') return renderAuth();
   if(state.view==='reset-password') return renderResetPassword();
+  if(state.view==='need-plot') return renderNeedPlot();
   if(state.view==='pending-approval') return renderPendingApproval();
   if(state.view==='home') return renderHeader()+renderNav()+renderHome();
   if(state.view==='forum') return renderHeader()+renderNav()+renderForum();
@@ -953,6 +970,21 @@ function renderView(){
   if(state.view==='category') return renderHeader()+renderNav()+renderCategory();
   if(state.view==='topic') return renderHeader()+renderNav()+renderTopic();
   return '';
+}
+function renderNeedPlot(){
+  return `
+  <div class="auth-wrap">
+    <div class="brand" style="justify-content:center;margin-bottom:22px;"><div class="mark">🌿</div><div><h1>СНТ «Поляны»</h1><p>ещё один шаг</p></div></div>
+    ${GARDEN_BANNER_SVG}
+    <div class="card" style="margin-top:18px;">
+      <h2 style="font-size:18px;margin-bottom:6px;">Укажите номер участка</h2>
+      <p class="hint" style="margin-bottom:12px;">Это нужно один раз, чтобы правление знало, кто есть на форуме. Спросим только сейчас.</p>
+      <div class="field"><label>Номер участка <span style="color:var(--stamp-red);">*</span></label><input id="plot-new" maxlength="20" placeholder="например, 45 или 12А"></div>
+      ${state.error?`<div class="error-msg">${esc(state.error)}</div>`:''}
+      <button class="btn btn-primary" style="width:100%" type="button" data-action="submit-plot">Сохранить</button>
+      <button class="btn btn-outline btn-small" style="margin-top:10px;" type="button" data-action="logout">Выйти</button>
+    </div>
+  </div>`;
 }
 function renderPendingApproval(){
   return `
@@ -1574,6 +1606,11 @@ function attachHandlers(){
           case 'submit-newpassword': {
             el.disabled=true; el.textContent='Сохраняем…';
             await doSetNewPassword(document.getElementById('newpass1').value, document.getElementById('newpass2').value);
+            break;
+          }
+          case 'submit-plot': {
+            el.disabled=true; el.textContent='Сохраняем…';
+            await savePlot(document.getElementById('plot-new').value);
             break;
           }
           case 'submit-register': {
