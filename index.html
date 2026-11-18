@@ -230,6 +230,7 @@ const GARDEN_ICON_SVG = `
 // consumes and clears the URL, so we can show the "new password" form instead of the forum.
 let recoveryMode = /type=recovery/.test(window.location.hash) || /type=recovery/.test(window.location.search);
 const linkExpired = /error_code=otp_expired|error=access_denied/.test(window.location.hash+window.location.search);
+const APP_VERSION = '18.11.2026';
 let sb = null;
 let configOk = SUPABASE_URL.startsWith('http') && SUPABASE_ANON_KEY.length > 20;
 let libraryLoadFailed = false;
@@ -261,7 +262,7 @@ let state = {
   siteContent: {}, editingIntro: false, openReactionPicker: null, reactionCounts: {},
   polls: [], pollVotes: {}, pollCounts: {}, pollVoters: {}, pollVoteRows: {}, allProfiles: [],
   replyTo: null, expandedReplies: {}, pendingImageUrl: null, uploadingImage: false,
-  editingUserId: null, editUserName: '', editUserRole: 'user',
+  editingUserId: null, editUserName: '', editUserRole: 'user', editUserPlot: '',
   editingPollId: null, newPollQuestion: '', newPollOptions: ['',''], newPollMulti: false, newPollCloses: '', newPollAllowChange: true,
   error: '', lastError: null,
 };
@@ -615,11 +616,13 @@ function renderCommentBody(raw){
 }
 
 // ---------- admin: edit a participant's profile ----------
-async function updateUserProfile(id, username, role){
+async function updateUserProfile(id, username, role, plot){
   try{
     username = (username||'').trim();
+    plot = cleanPlot(plot);
     if(username.length<2){ alert('Имя должно быть не короче 2 символов.'); return; }
-    const {error} = await sb.from('profiles').update({username, role}).eq('id', id);
+    if(plot){ const pe = plotError(plot); if(pe){ alert(pe); return; } }
+    const {error} = await sb.from('profiles').update({username, role, plot_number: plot || null}).eq('id', id);
     if(error){
       const msg = (error.message||'').toLowerCase();
       alert(msg.includes('duplicate')||msg.includes('unique') ? 'Это имя уже занято, выберите другое.' : ('Ошибка: '+error.message));
@@ -651,12 +654,21 @@ async function revokeUser(id){
 }
 
 // ---------- auth ----------
-async function doRegister(email, username, password, password2){
+function cleanPlot(v){ return (v||'').replace(/\s+/g,' ').trim().replace(/^№\s*/,''); }
+function plotError(v){
+  if(!v) return 'Укажите номер участка.';
+  if(v.length>20) return 'Номер участка слишком длинный.';
+  if(!/^[0-9A-Za-zА-Яа-яЁё][0-9A-Za-zА-Яа-яЁё \-\/.]*$/.test(v)) return 'Номер участка: используйте цифры и буквы (например, 45 или 12А).';
+  return '';
+}
+async function doRegister(email, username, password, password2, plot){
   try{
     state.error = '';
-    email=(email||'').trim(); username=(username||'').trim();
+    email=(email||'').trim(); username=(username||'').trim(); plot=cleanPlot(plot);
     if(!email.includes('@')){ state.error='Введите корректный email.'; return render(); }
     if(username.length<2){ state.error='Имя должно быть не короче 2 символов.'; return render(); }
+    const pe = plotError(plot);
+    if(pe){ state.error = pe; return render(); }
     if(!password || password.length<6){ state.error='Пароль должен быть не короче 6 символов.'; return render(); }
     if(password!==password2){ state.error='Пароли не совпадают.'; return render(); }
 
@@ -664,7 +676,7 @@ async function doRegister(email, username, password, password2){
     if(checkErr) throw checkErr;
     if(existing){ state.error = 'Это имя уже занято, придумайте другое.'; return render(); }
 
-    const {data, error} = await sb.auth.signUp({email, password, options:{data:{username}}});
+    const {data, error} = await sb.auth.signUp({email, password, options:{data:{username, plot_number: plot}}});
     if(error){
       const msg = (error.message||'').toLowerCase();
       state.error = (msg.includes('duplicate') || msg.includes('unique') || msg.includes('database error'))
@@ -684,10 +696,19 @@ async function doRegister(email, username, password, password2){
 async function doLogin(email, password){
   try{
     state.error = '';
-    const {data, error} = await sb.auth.signInWithPassword({email:(email||'').trim(), password});
+    const {data, error} = await Promise.race([
+      sb.auth.signInWithPassword({email:(email||'').trim(), password}),
+      new Promise((_,rej)=> setTimeout(()=>rej(new Error('timeout')), 20000))
+    ]);
     if(error){ state.error = 'Не удалось войти: '+error.message; return render(); }
     await afterAuth(data.user);
-  } catch(err){ reportError(err); }
+  } catch(err){
+    if(err && err.message==='timeout'){
+      state.error = 'Сервер не отвечает. Проверьте интернет и обновите страницу. Если не помогает — очистите данные сайта в браузере или откройте сайт в режиме инкогнито.';
+      return render();
+    }
+    reportError(err);
+  }
 }
 async function doForgotPassword(){
   try{
@@ -904,6 +925,7 @@ function renderHeader(){
     <div class="userbox">
       <span>${esc(state.profile.username)}</span>
       <span class="role-badge ${isAdmin()?'admin':''}">${isAdmin()?'АДМИН':'участник'}</span>
+      <button class="btn btn-outline btn-small" data-action="toggle-notify" title="Получать письма о новых сообщениях, объявлениях и событиях">✉ Письма: ${state.profile.notify_email===false?'выкл':'вкл'}</button>
       <button class="btn btn-outline btn-small" data-action="logout">Выйти</button>
     </div>
   </div>`;
@@ -952,6 +974,7 @@ function renderAdminUsers(){
       <div class="ticket-row" style="cursor:default;">
         <div class="user-edit-row">
           <input type="text" id="edit-user-name" value="${esc(state.editUserName)}">
+          <input type="text" id="edit-user-plot" value="${esc(state.editUserPlot)}" placeholder="№ участка" maxlength="20" style="max-width:110px;">
           <label style="font-size:13px;display:flex;align-items:center;gap:4px;">
             <input type="checkbox" id="edit-user-role" style="width:auto;" ${state.editUserRole==='admin'?'checked':''}> админ
           </label>
@@ -963,7 +986,7 @@ function renderAdminUsers(){
     return `
     <div class="ticket-row" style="cursor:default;">
       <div><div class="t-title">${esc(p.username)}</div>
-      <div class="t-meta">${p.role==='admin'?'админ':'участник'} · зарегистрирован ${fmtTime(p.created_at)}</div></div>
+      <div class="t-meta">${p.role==='admin'?'админ':'участник'} · ${p.plot_number?('участок №'+esc(p.plot_number)):'<span style="color:var(--stamp-red);">участок не указан</span>'} · зарегистрирован ${fmtTime(p.created_at)}</div></div>
       <div style="display:flex;gap:8px;align-items:center;">
         <button class="btn-ghost" data-action="edit-user" data-id="${p.id}">редактировать</button>
         ${actionBtn}
@@ -1016,9 +1039,11 @@ function renderAuth(){
         ${state.error?`<div class="error-msg">${esc(state.error)}</div>`:''}
         <button class="btn btn-primary" style="width:100%" type="button" data-action="submit-login">Войти</button>
         <p class="hint" style="text-align:center;margin-top:10px;"><a data-action="forgot-password" style="cursor:pointer;">Забыли пароль?</a></p>
+        <p class="hint" style="text-align:center;opacity:.6;">версия сайта: ${APP_VERSION}</p>
       ` : `
         <div class="field"><label>Email</label><input id="reg-email" type="email"></div>
         <div class="field"><label>Отображаемое имя</label><input id="reg-username"></div>
+        <div class="field"><label>Номер участка <span style="color:var(--stamp-red);">*</span></label><input id="reg-plot" maxlength="20" placeholder="например, 45 или 12А" required></div>
         <div class="field"><label>Пароль</label><input id="reg-password" type="password"></div>
         <div class="field"><label>Повторите пароль</label><input id="reg-password2" type="password"></div>
         ${state.error?`<div class="error-msg">${esc(state.error)}</div>`:''}
@@ -1432,7 +1457,7 @@ function attachHandlers(){
           case 'revoke-user': await revokeUser(id); break;
           case 'edit-user': {
             const p = state.allProfiles.find(p=>p.id===id);
-            if(p){ state.editingUserId=id; state.editUserName=p.username; state.editUserRole=p.role; render(); }
+            if(p){ state.editingUserId=id; state.editUserName=p.username; state.editUserRole=p.role; state.editUserPlot=p.plot_number||''; render(); }
             break;
           }
           case 'cancel-user-edit': state.editingUserId=null; render(); break;
@@ -1440,7 +1465,8 @@ function attachHandlers(){
             const nameInp = document.getElementById('edit-user-name');
             const roleInp = document.getElementById('edit-user-role');
             const newRole = roleInp && roleInp.checked ? 'admin' : 'user';
-            await updateUserProfile(id, nameInp?nameInp.value:'', newRole);
+            const plotInp = document.getElementById('edit-user-plot');
+            await updateUserProfile(id, nameInp?nameInp.value:'', newRole, plotInp?plotInp.value:'');
             break;
           }
           case 'vote-poll': await votePoll(el.getAttribute('data-poll'), parseInt(el.getAttribute('data-opt'),10)); break;
@@ -1530,6 +1556,14 @@ function attachHandlers(){
             break;
           }
           case 'toggle-picker': state.openReactionPicker = (state.openReactionPicker===id ? null : id); render(); break;
+          case 'toggle-notify': {
+            const next = state.profile.notify_email === false;
+            const {error} = await sb.rpc('set_my_notify', {val: next});
+            if(error) throw error;
+            state.profile.notify_email = next;
+            render();
+            break;
+          }
           case 'dismiss-error': state.lastError=null; render(); break;
           case 'submit-login': {
             el.disabled=true; el.textContent='Входим…';
@@ -1548,7 +1582,8 @@ function attachHandlers(){
               document.getElementById('reg-email').value,
               document.getElementById('reg-username').value,
               document.getElementById('reg-password').value,
-              document.getElementById('reg-password2').value
+              document.getElementById('reg-password2').value,
+              document.getElementById('reg-plot').value
             );
             break;
           }
