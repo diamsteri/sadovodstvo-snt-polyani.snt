@@ -140,6 +140,12 @@
   .attach-photo-btn{cursor:pointer;background:#fff;border:1.5px solid var(--line);border-radius:4px;padding:5px 10px;font-size:14px;}
   .attach-photo-btn:hover{border-color:var(--teal);}
   .pending-image{position:relative;margin-bottom:10px;}
+  .pdot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#bbb;margin-right:5px;vertical-align:middle;}
+  .pdot.on{background:#2e9e4f;box-shadow:0 0 0 2px rgba(46,158,79,.2);}
+  .member-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:14px;}
+  .member-row:last-child{border-bottom:0;}
+  .member-row .pstat{color:#888;font-size:12.5px;white-space:nowrap;}
+  .member-row .pstat.on{color:#2e9e4f;font-weight:600;}
   .file-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
   .file-chip{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:5px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:13px;color:inherit;text-decoration:none;}
   a.file-chip:hover{border-color:var(--teal);}
@@ -235,7 +241,7 @@ const GARDEN_ICON_SVG = `
 // consumes and clears the URL, so we can show the "new password" form instead of the forum.
 let recoveryMode = /type=recovery/.test(window.location.hash) || /type=recovery/.test(window.location.search);
 const linkExpired = /error_code=otp_expired|error=access_denied/.test(window.location.hash+window.location.search);
-const APP_VERSION = '19.11.2026-1';
+const APP_VERSION = '20.11.2026-1';
 let sb = null;
 let configOk = SUPABASE_URL.startsWith('http') && SUPABASE_ANON_KEY.length > 20;
 let libraryLoadFailed = false;
@@ -266,7 +272,7 @@ let state = {
   calYear: new Date().getFullYear(), calMonth: new Date().getMonth(), // 0-based
   siteContent: {}, editingIntro: false, openReactionPicker: null, reactionCounts: {},
   polls: [], pollVotes: {}, pollCounts: {}, pollVoters: {}, pollVoteRows: {}, allProfiles: [],
-  replyTo: null, expandedReplies: {}, pendingImageUrl: null, pendingFiles: [], uploadingImage: false,
+  replyTo: null, expandedReplies: {}, pendingImageUrl: null, pendingFiles: [], uploadingImage: false, online: {}, members: [],
   editingUserId: null, editUserName: '', editUserRole: 'user', editUserPlot: '',
   editingPollId: null, newPollQuestion: '', newPollOptions: ['',''], newPollMulti: false, newPollCloses: '', newPollAllowChange: true,
   error: '', lastError: null,
@@ -453,6 +459,83 @@ async function ensureProfiles(ids){
   if(error) throw error;
   data.forEach(p=> state.profilesMap[p.id] = p.username);
 }
+// ---------- presence (онлайн / офлайн) ----------
+let presenceChannel = null, presenceTimer = null, lastTouch = 0;
+function isOnline(id){ return !!state.online[id] || (state.user && id===state.user.id); }
+function presenceText(id){
+  if(isOnline(id)) return 'онлайн';
+  const m = state.members.find(x=>x.id===id);
+  if(!m || !m.last_seen) return 'не в сети';
+  const mins = Math.floor((Date.now()-new Date(m.last_seen).getTime())/60000);
+  if(mins < 2) return 'только что';
+  if(mins < 60) return 'был(а) '+mins+' мин назад';
+  const hrs = Math.floor(mins/60);
+  if(hrs < 24) return 'был(а) '+hrs+' ч назад';
+  const days = Math.floor(hrs/24);
+  if(days < 30) return 'был(а) '+days+' дн назад';
+  return 'был(а) давно';
+}
+function updatePresenceDom(){
+  document.querySelectorAll('[data-pdot]').forEach(el=>{
+    const id = el.getAttribute('data-pdot'); const on = isOnline(id);
+    el.classList.toggle('on', on); el.title = presenceText(id);
+  });
+  document.querySelectorAll('[data-pstat]').forEach(el=>{
+    const id = el.getAttribute('data-pstat'); const on = isOnline(id);
+    el.classList.toggle('on', on); el.textContent = presenceText(id);
+  });
+  const cnt = document.querySelector('[data-online-count]');
+  if(cnt) cnt.textContent = state.members.filter(m=>isOnline(m.id)).length;
+}
+function dot(id){ return `<span class="pdot" data-pdot="${esc(id)}"></span>`; }
+async function loadMembers(){
+  try{
+    let r = await sb.from('profiles').select('id, username, role, approved, last_seen');
+    if(r.error) r = await sb.from('profiles').select('id, username, role, approved');
+    if(r.error) return;
+    state.members = (r.data||[]).filter(p=>p.approved || p.role==='admin');
+    state.members.forEach(p=>{ state.profilesMap[p.id] = p.username; });
+  } catch(e){ console.error(e); }
+}
+async function touchLastSeen(){
+  if(!state.user) return;
+  lastTouch = Date.now();
+  try{
+    await sb.rpc('touch_last_seen');
+    const me = state.members.find(m=>m.id===state.user.id);
+    if(me) me.last_seen = new Date().toISOString();
+  } catch(e){}
+}
+function startPresence(){
+  stopPresence();
+  if(!state.user) return;
+  try{
+    presenceChannel = sb.channel('online-users', {config:{presence:{key:state.user.id}}});
+    presenceChannel.on('presence', {event:'sync'}, ()=>{
+      state.online = presenceChannel.presenceState() || {};
+      updatePresenceDom();
+    });
+    presenceChannel.subscribe(async status=>{
+      if(status==='SUBSCRIBED'){ try{ await presenceChannel.track({at:Date.now()}); }catch(e){} }
+    });
+  } catch(e){ console.error(e); }
+  touchLastSeen();
+  presenceTimer = setInterval(async ()=>{
+    if(Date.now()-lastTouch > 110000) await touchLastSeen();
+    updatePresenceDom();
+  }, 30000);
+}
+function stopPresence(){
+  if(presenceTimer){ clearInterval(presenceTimer); presenceTimer=null; }
+  if(presenceChannel){ try{ sb.removeChannel(presenceChannel); }catch(e){} presenceChannel=null; }
+  state.online = {};
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' && state.user && presenceChannel){
+    try{ presenceChannel.track({at:Date.now()}); }catch(e){}
+    touchLastSeen(); loadMembers().then(updatePresenceDom);
+  }
+});
 function authorName(id){ return state.profilesMap[id] || '—'; }
 
 // ---------- images ----------
@@ -796,6 +879,8 @@ async function afterAuth(user){
   await loadSiteContent();
   await loadPolls();
   if(data.role === 'admin') await loadAllProfiles();
+  await loadMembers();
+  startPresence();
   state.view = 'home';
   render();
 }
@@ -811,6 +896,7 @@ async function savePlot(raw){
   } catch(err){ reportError(err); }
 }
 async function doLogout(){
+  stopPresence();
   await sb.auth.signOut();
   state.user=null; state.profile=null; state.view='login';
   if(commentsChannel){ sb.removeChannel(commentsChannel); commentsChannel=null; }
@@ -962,6 +1048,7 @@ function scrollCommentsToBottom(){
 function render(){
   document.getElementById('app').innerHTML = renderConfigWarning() + renderErrorBanner() + renderView();
   attachHandlers();
+  updatePresenceDom();
 }
 function renderConfigWarning(){
   if(configOk) return '';
@@ -1182,6 +1269,10 @@ function renderHome(){
     </label>` : ''}
   </div>
   ${introHtml}
+  <div class="home-section">
+    <h2>👥 Участники (<span data-online-count>${state.members.filter(m=>isOnline(m.id)).length}</span> онлайн)</h2>
+    <div class="card" style="padding:6px 16px;">${[...state.members].sort((a,b)=>(isOnline(b.id)-isOnline(a.id))||(a.username||'').localeCompare(b.username||'','ru')).map(m=>`<div class="member-row"><span>${dot(m.id)}${esc(m.username)}${m.role==='admin'?' <span style="color:#888;font-size:12px;">· админ</span>':''}</span><span class="pstat" data-pstat="${esc(m.id)}"></span></div>`).join('') || '<div class="empty-state">Пока никого.</div>'}</div>
+  </div>
   <div class="home-section">
     <h2>📋 Объявления правления</h2>
     <div class="card" style="padding:6px 16px;">${annHtml}</div>
@@ -1416,7 +1507,7 @@ function renderSingleComment(c){
     }
   }
   return `<div class="comment">
-    <div class="comment-head"><span class="c-author">${esc(authorName(c.author_id))}</span>
+    <div class="comment-head"><span class="c-author">${dot(c.author_id)}${esc(authorName(c.author_id))}</span>
     <span class="c-time">${fmtTime(c.created_at)}${c.edited?' · изменено':''}</span></div>
     ${quoteHtml}
     ${c.image_url ? `<img src="${esc(c.image_url)}" class="c-image" alt="" data-action="open-image" data-src="${esc(c.image_url)}" title="Нажмите, чтобы увеличить">` : ''}
