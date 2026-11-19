@@ -241,7 +241,7 @@ const GARDEN_ICON_SVG = `
 // consumes and clears the URL, so we can show the "new password" form instead of the forum.
 let recoveryMode = /type=recovery/.test(window.location.hash) || /type=recovery/.test(window.location.search);
 const linkExpired = /error_code=otp_expired|error=access_denied/.test(window.location.hash+window.location.search);
-const APP_VERSION = '20.11.2026-1';
+const APP_VERSION = '20.11.2026-2';
 let sb = null;
 let configOk = SUPABASE_URL.startsWith('http') && SUPABASE_ANON_KEY.length > 20;
 let libraryLoadFailed = false;
@@ -484,8 +484,7 @@ function updatePresenceDom(){
     const id = el.getAttribute('data-pstat'); const on = isOnline(id);
     el.classList.toggle('on', on); el.textContent = presenceText(id);
   });
-  const cnt = document.querySelector('[data-online-count]');
-  if(cnt) cnt.textContent = state.members.filter(m=>isOnline(m.id)).length;
+
 }
 function dot(id){ return `<span class="pdot" data-pdot="${esc(id)}"></span>`; }
 async function loadMembers(){
@@ -1148,7 +1147,7 @@ function renderAdminUsers(){
     }
     return `
     <div class="ticket-row" style="cursor:default;">
-      <div><div class="t-title">${esc(p.username)}</div>
+      <div><div class="t-title">${dot(p.id)}${esc(p.username)} <span class="pstat" data-pstat="${esc(p.id)}" style="font-weight:400;"></span></div>
       <div class="t-meta">${p.role==='admin'?'админ':'участник'} · ${p.plot_number?('участок №'+esc(p.plot_number)):'<span style="color:var(--stamp-red);">участок не указан</span>'} · зарегистрирован ${fmtTime(p.created_at)}</div></div>
       <div style="display:flex;gap:8px;align-items:center;">
         <button class="btn-ghost" data-action="edit-user" data-id="${p.id}">редактировать</button>
@@ -1269,10 +1268,6 @@ function renderHome(){
     </label>` : ''}
   </div>
   ${introHtml}
-  <div class="home-section">
-    <h2>👥 Участники (<span data-online-count>${state.members.filter(m=>isOnline(m.id)).length}</span> онлайн)</h2>
-    <div class="card" style="padding:6px 16px;">${[...state.members].sort((a,b)=>(isOnline(b.id)-isOnline(a.id))||(a.username||'').localeCompare(b.username||'','ru')).map(m=>`<div class="member-row"><span>${dot(m.id)}${esc(m.username)}${m.role==='admin'?' <span style="color:#888;font-size:12px;">· админ</span>':''}</span><span class="pstat" data-pstat="${esc(m.id)}"></span></div>`).join('') || '<div class="empty-state">Пока никого.</div>'}</div>
-  </div>
   <div class="home-section">
     <h2>📋 Объявления правления</h2>
     <div class="card" style="padding:6px 16px;">${annHtml}</div>
@@ -1507,7 +1502,7 @@ function renderSingleComment(c){
     }
   }
   return `<div class="comment">
-    <div class="comment-head"><span class="c-author">${dot(c.author_id)}${esc(authorName(c.author_id))}</span>
+    <div class="comment-head"><span class="c-author">${dot(c.author_id)}${esc(authorName(c.author_id))}</span> <span class="pstat" data-pstat="${esc(c.author_id)}"></span>
     <span class="c-time">${fmtTime(c.created_at)}${c.edited?' · изменено':''}</span></div>
     ${quoteHtml}
     ${c.image_url ? `<img src="${esc(c.image_url)}" class="c-image" alt="" data-action="open-image" data-src="${esc(c.image_url)}" title="Нажмите, чтобы увеличить">` : ''}
