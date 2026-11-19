@@ -140,6 +140,11 @@
   .attach-photo-btn{cursor:pointer;background:#fff;border:1.5px solid var(--line);border-radius:4px;padding:5px 10px;font-size:14px;}
   .attach-photo-btn:hover{border-color:var(--teal);}
   .pending-image{position:relative;margin-bottom:10px;}
+  .file-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+  .file-chip{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:5px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:13px;color:inherit;text-decoration:none;}
+  a.file-chip:hover{border-color:var(--teal);}
+  .file-chip .fname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;}
+  .file-chip .fsize{color:#888;font-size:12px;white-space:nowrap;}
   .pending-image img{max-width:160px;border-radius:6px;display:block;}
   .rich-compose{width:100%;min-height:70px;padding:10px 12px;border:1.5px solid var(--line);border-radius:4px;background:#fff;font-size:14px;font-family:inherit;color:var(--ink);white-space:pre-wrap;word-wrap:break-word;}
   .rich-compose:focus{outline:2px solid var(--teal);border-color:var(--teal);}
@@ -230,7 +235,7 @@ const GARDEN_ICON_SVG = `
 // consumes and clears the URL, so we can show the "new password" form instead of the forum.
 let recoveryMode = /type=recovery/.test(window.location.hash) || /type=recovery/.test(window.location.search);
 const linkExpired = /error_code=otp_expired|error=access_denied/.test(window.location.hash+window.location.search);
-const APP_VERSION = '18.11.2026-2';
+const APP_VERSION = '19.11.2026-1';
 let sb = null;
 let configOk = SUPABASE_URL.startsWith('http') && SUPABASE_ANON_KEY.length > 20;
 let libraryLoadFailed = false;
@@ -261,7 +266,7 @@ let state = {
   calYear: new Date().getFullYear(), calMonth: new Date().getMonth(), // 0-based
   siteContent: {}, editingIntro: false, openReactionPicker: null, reactionCounts: {},
   polls: [], pollVotes: {}, pollCounts: {}, pollVoters: {}, pollVoteRows: {}, allProfiles: [],
-  replyTo: null, expandedReplies: {}, pendingImageUrl: null, uploadingImage: false,
+  replyTo: null, expandedReplies: {}, pendingImageUrl: null, pendingFiles: [], uploadingImage: false,
   editingUserId: null, editUserName: '', editUserRole: 'user', editUserPlot: '',
   editingPollId: null, newPollQuestion: '', newPollOptions: ['',''], newPollMulti: false, newPollCloses: '', newPollAllowChange: true,
   error: '', lastError: null,
@@ -465,6 +470,42 @@ async function uploadHomePhoto(file){
     await saveSiteContent('home_photo_url', url);
     render();
   } catch(err){ reportError(err); }
+}
+const FILE_EXTS = ['pdf','doc','docx','xls','xlsx','ppt','pptx','odt','ods','odp','rtf','txt','csv','zip','rar','7z','jpg','jpeg','png','gif','webp','heic'];
+const MAX_FILE_MB = 20, MAX_FILES = 5;
+function fileExt(name){ return ((name||'').split('.').pop()||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+function fmtSize(n){ n=+n||0; return n>=1048576 ? (n/1048576).toFixed(1).replace('.',',')+' МБ' : Math.max(1,Math.round(n/1024))+' КБ'; }
+function fileIcon(ext){
+  if(ext==='pdf') return '📕';
+  if(['doc','docx','odt','rtf','txt'].includes(ext)) return '📘';
+  if(['xls','xlsx','ods','csv'].includes(ext)) return '📗';
+  if(['ppt','pptx','odp'].includes(ext)) return '📙';
+  if(['zip','rar','7z'].includes(ext)) return '🗜';
+  return '📄';
+}
+function isSafeUrl(u){ return typeof u==='string' && /^https:\/\//i.test(u); }
+async function uploadCommentFiles(fileList){
+  const files = Array.from(fileList||[]);
+  if(!files.length) return;
+  const problems = [];
+  const ok = [];
+  for(const f of files){
+    const ext = fileExt(f.name);
+    if(!FILE_EXTS.includes(ext)) problems.push('«'+f.name+'»: такой формат не поддерживается');
+    else if(f.size > MAX_FILE_MB*1048576) problems.push('«'+f.name+'»: больше '+MAX_FILE_MB+' МБ');
+    else if(state.pendingFiles.length + ok.length >= MAX_FILES) problems.push('«'+f.name+'»: не больше '+MAX_FILES+' файлов в одном сообщении');
+    else ok.push(f);
+  }
+  if(problems.length) alert(problems.join('\n'));
+  if(!ok.length) return;
+  try{
+    state.uploadingImage = true; render();
+    for(const f of ok){
+      const url = await uploadFile(f);
+      state.pendingFiles.push({name:f.name.slice(0,120), size:f.size, url});
+    }
+    state.uploadingImage = false; render();
+  } catch(err){ state.uploadingImage=false; render(); reportError(err); }
 }
 async function uploadCommentImage(file){
   try{
@@ -834,13 +875,15 @@ function startReply(commentId, quoteText){
 async function addComment(text){
   text=(text||'').trim();
   const imageUrl = state.pendingImageUrl;
-  if(!text && !imageUrl) return;
+  const files = state.pendingFiles.slice();
+  if(!text && !imageUrl && !files.length) return;
   const replyTo = state.replyTo ? state.replyTo.commentId : null;
   const quote = state.replyTo ? state.replyTo.quote : null;
-  const {error} = await sb.from('comments').insert({topic_id:state.currentTopicId, author_id:state.user.id, text: text||'', reply_to:replyTo, quote_text:quote, image_url:imageUrl});
+  const {error} = await sb.from('comments').insert({topic_id:state.currentTopicId, author_id:state.user.id, text: text||'', reply_to:replyTo, quote_text:quote, image_url:imageUrl, files:files});
   if(error) throw error;
   state.replyTo = null;
   state.pendingImageUrl = null;
+  state.pendingFiles = [];
   await loadComments(state.currentTopicId);
   if(replyTo) state.expandedReplies[findCommentRoot(replyTo)] = true;
   render(); scrollCommentsToBottom();
@@ -878,18 +921,19 @@ async function toggleReaction(commentId, emoji){
 // ---------- navigation ----------
 function openCategory(id){ state.currentCategoryId=id; state.view='category'; render(); }
 function goHome(){ unsubscribeComments(); state.currentCategoryId=null; resetPollForm(); state.view='home'; render(); }
-function backToForum(){ unsubscribeComments(); state.currentCategoryId=null; state.openReactionPicker=null; state.replyTo=null; state.pendingImageUrl=null; resetPollForm(); state.view='forum'; render(); }
+function backToForum(){ unsubscribeComments(); state.currentCategoryId=null; state.openReactionPicker=null; state.replyTo=null; state.pendingImageUrl=null; state.pendingFiles=[]; resetPollForm(); state.view='forum'; render(); }
 function goPolls(){ unsubscribeComments(); state.currentCategoryId=null; state.currentTopicId=null; resetPollForm(); state.view='polls'; render(); }
 async function goUsers(){
   unsubscribeComments(); state.currentCategoryId=null; state.currentTopicId=null; resetPollForm();
   await loadAllProfiles();
   state.view='admin-users'; render();
 }
-function backToCategory(){ unsubscribeComments(); state.view='category'; state.currentTopicId=null; state.openReactionPicker=null; state.replyTo=null; state.pendingImageUrl=null; render(); }
+function backToCategory(){ unsubscribeComments(); state.view='category'; state.currentTopicId=null; state.openReactionPicker=null; state.replyTo=null; state.pendingImageUrl=null; state.pendingFiles=[]; render(); }
 async function openTopic(id){
   state.openReactionPicker = null;
   state.replyTo = null;
   state.pendingImageUrl = null;
+  state.pendingFiles = [];
   state.expandedReplies = {};
   state.currentTopicId=id;
   await loadTopics();
@@ -1376,6 +1420,7 @@ function renderSingleComment(c){
     <span class="c-time">${fmtTime(c.created_at)}${c.edited?' · изменено':''}</span></div>
     ${quoteHtml}
     ${c.image_url ? `<img src="${esc(c.image_url)}" class="c-image" alt="" data-action="open-image" data-src="${esc(c.image_url)}" title="Нажмите, чтобы увеличить">` : ''}
+    ${Array.isArray(c.files)&&c.files.length ? `<div class="file-list">${c.files.filter(f=>f&&isSafeUrl(f.url)).map(f=>{const e=fileExt(f.name);return `<a class="file-chip" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer" download="${esc(f.name||'файл')}" title="Скачать"><span>${fileIcon(e)}</span><span class="fname">${esc(f.name||'файл')}</span><span class="fsize">${fmtSize(f.size)}</span></a>`;}).join('')}</div>` : ''}
     <div class="c-text" data-ctext-id="${c.id}">${renderCommentBody(c.text||'')}</div>
     <div class="c-footer"><div class="reactions">${activePills}
       <button class="react-add-btn" data-action="toggle-picker" data-id="${c.id}">${pickerOpen?'✕':'😊+'}</button>
@@ -1456,8 +1501,12 @@ function renderTopic(){
       <label class="attach-photo-btn" title="Прикрепить фото">
         📷<input type="file" id="attach-image-input" accept="image/*" style="display:none;">
       </label>
+      <label class="attach-photo-btn" title="Прикрепить файл (PDF, Word, Excel, архив…)">
+        📎<input type="file" id="attach-file-input" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.rtf,.txt,.csv,.zip,.rar,.7z,image/*" style="display:none;">
+      </label>
     </div>
-    ${state.uploadingImage ? `<div class="hint">Загружаю фото…</div>` : ''}
+    ${state.uploadingImage ? `<div class="hint">Загружаю…</div>` : ''}
+    ${state.pendingFiles.length ? `<div class="file-list">${state.pendingFiles.map((f,i)=>`<span class="file-chip"><span>${fileIcon(fileExt(f.name))}</span><span class="fname">${esc(f.name)}</span><span class="fsize">${fmtSize(f.size)}</span><button type="button" class="btn-ghost" data-action="remove-pending-file" data-idx="${i}" title="Убрать">✕</button></span>`).join('')}</div>` : ''}
     ${state.pendingImageUrl ? `<div class="pending-image"><img src="${esc(state.pendingImageUrl)}"><button type="button" class="btn-ghost" data-action="remove-pending-image">✕ убрать фото</button></div>` : ''}
     <div class="field"><div id="new-comment-text" class="rich-compose" contenteditable="true" data-placeholder="${state.replyTo?'Ваш ответ…':'Написать сообщение…'}"></div></div>
     <button class="btn btn-primary" type="button" data-action="submit-comment">Отправить</button>
@@ -1578,6 +1627,7 @@ function attachHandlers(){
             lb.classList.add('open');
             break;
           }
+          case 'remove-pending-file': state.pendingFiles.splice(+el.dataset.idx,1); render(); break;
           case 'remove-pending-image': state.pendingImageUrl = null; render(); break;
           case 'reply-to': startReply(id, null); break;
           case 'cancel-reply': state.replyTo = null; render(); break;
@@ -1667,6 +1717,13 @@ function attachHandlers(){
   if(attachImgInput) attachImgInput.addEventListener('change', async ()=>{
     const file = attachImgInput.files[0];
     if(file) await uploadCommentImage(file);
+  });
+
+  const attachFileInput = document.getElementById('attach-file-input');
+  if(attachFileInput) attachFileInput.addEventListener('change', async ()=>{
+    const list = Array.from(attachFileInput.files||[]);
+    attachFileInput.value='';
+    await uploadCommentFiles(list);
   });
 
   const homePhotoInput = document.getElementById('home-photo-input');
